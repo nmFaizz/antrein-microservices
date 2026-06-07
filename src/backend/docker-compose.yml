@@ -3,12 +3,8 @@ services:
     build: ./menu-preorder-service
     ports:
       - "8000:8000"
-    environment:
-      DB_HOST: ${MENU_PREORDER_DB_HOST}
-      DB_PORT: ${MENU_PREORDER_DB_PORT}
-      DB_NAME: ${MENU_PREORDER_DB_NAME}
-      DB_USER: ${MENU_PREORDER_DB_USER}
-      DB_PASSWORD: ${MENU_PREORDER_DB_PASSWORD}
+    env_file:
+      - .env
     depends_on:
       menu-preorder-db:
         condition: service_healthy
@@ -19,12 +15,13 @@ services:
       POSTGRES_USER: ${MENU_PREORDER_DB_USER}
       POSTGRES_PASSWORD: ${MENU_PREORDER_DB_PASSWORD}
       POSTGRES_DB: ${MENU_PREORDER_DB_NAME}
+      PGPORT: ${MENU_PREORDER_DB_PORT}
     ports:
-      - "5432:5432"
+      - "${MENU_PREORDER_DB_PORT}:${MENU_PREORDER_DB_PORT}"
     volumes:
       - menu_preorder_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MENU_PREORDER_DB_USER} -d ${MENU_PREORDER_DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -p ${MENU_PREORDER_DB_PORT} -U ${MENU_PREORDER_DB_USER} -d ${MENU_PREORDER_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
