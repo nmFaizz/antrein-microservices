@@ -20,15 +20,16 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-# Default statuses, customizable by admins after seeding.
+# Default statuses (the canonical set the business logic depends on),
+# customizable by admins after seeding. Mirrors app.lib.constants.DefaultStatus;
+# kept inline so the migration has no dependency on application code.
 DEFAULT_STATUSES: list[tuple[str, str]] = [
     ("waiting", "#9CA3AF"),
     ("called", "#3B82F6"),
-    ("serving", "#F59E0B"),
     ("served", "#10B981"),
     ("skipped", "#F97316"),
+    ("re_queued", "#8B5CF6"),
     ("cancelled", "#EF4444"),
-    ("requeued", "#8B5CF6"),
 ]
 
 

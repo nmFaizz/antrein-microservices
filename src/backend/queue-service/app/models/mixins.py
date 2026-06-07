@@ -4,8 +4,12 @@ from sqlmodel import Field, SQLModel
 
 
 def utcnow() -> datetime:
-    """Timezone-aware current UTC timestamp (used as a column default)."""
-    return datetime.now(timezone.utc)
+    """Naive UTC timestamp (matches the timezone-naive DateTime columns).
+
+    Kept naive so values set in-memory and values reloaded from the database
+    can be compared/subtracted without tz-aware/naive mismatches.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class TimestampMixin(SQLModel):
