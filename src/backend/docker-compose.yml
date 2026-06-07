@@ -29,5 +29,32 @@ services:
       timeout: 5s
       retries: 5
 
+  queue-service:
+    build: ./queue-service
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://${QUEUE_DB_USER}:${QUEUE_DB_PASSWORD}@queue-service-db:5432/${QUEUE_DB_NAME}
+    depends_on:
+      queue-service-db:
+        condition: service_healthy
+
+  queue-service-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${QUEUE_DB_USER}
+      POSTGRES_PASSWORD: ${QUEUE_DB_PASSWORD}
+      POSTGRES_DB: ${QUEUE_DB_NAME}
+    ports:
+      - "5434:5432"
+    volumes:
+      - queue_service_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${QUEUE_DB_USER} -d ${QUEUE_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   menu_preorder_data:
+  queue_service_data:
