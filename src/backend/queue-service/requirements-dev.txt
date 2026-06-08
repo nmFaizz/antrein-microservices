@@ -1,0 +1,5 @@
+# Test/development dependencies (install with: pip install -r requirements-dev.txt)
+# httpx is already pinned in requirements.txt and is used by Starlette TestClient.
+pytest==9.0.3
+pytest-cov==7.1.0
+coverage==7.14.1
