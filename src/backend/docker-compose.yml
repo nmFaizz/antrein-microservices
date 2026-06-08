@@ -3,7 +3,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "9090:9090"
+      - "8080:9090"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -15,11 +15,18 @@ services:
     build: ./user-service
     ports:
       - "8002:8000"
-    env_file:
-      - .env
+    environment:
+      - USER_DB_HOST=user-db
+      - USER_DB_PORT=${USER_DB_PORT}
+      - USER_DB_NAME=${USER_DB_NAME}
+      - USER_DB_USER=${USER_DB_USER}
+      - USER_DB_PASSWORD=${USER_DB_PASSWORD}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}  
     depends_on:
       user-db:
         condition: service_healthy
+
   user-db:
     image: postgres:16-alpine
     environment:
@@ -41,8 +48,13 @@ services:
     build: ./menu-preorder-service
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      - MENU_PREORDER_DB_HOST=${MENU_PREORDER_DB_HOST}
+      - MENU_PREORDER_DB_PORT=${MENU_PREORDER_DB_PORT}
+      - MENU_PREORDER_DB_NAME=${MENU_PREORDER_DB_NAME}
+      - MENU_PREORDER_DB_USER=${MENU_PREORDER_DB_USER}
+      - MENU_PREORDER_DB_PASSWORD=${MENU_PREORDER_DB_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       menu-preorder-db:
         condition: service_healthy
