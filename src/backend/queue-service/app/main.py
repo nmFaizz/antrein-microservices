@@ -1,16 +1,29 @@
-import logging
+import os
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.core.logger import get_logger
+from app.core.metrics import PrometheusMiddleware, metrics_endpoint
+from app.core.tracing import setup_tracing
+from app.lib.config import settings
 from app.lib.exceptions import QueueServiceError
 from app.routers import api_router
-from app.schemas.response import fail
+from app.schemas.response import APIResponse, fail, ok
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
+setup_tracing(settings.PROJECT_NAME)
 
 app = FastAPI(title="Queue Service API", version="1.0")
+
+# Prometheus middleware: catat metrics untuk setiap request HTTP.
+app.add_middleware(PrometheusMiddleware)
+
+if os.getenv("OTEL_SDK_DISABLED", "").lower() not in ("true", "1", "yes"):
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+    FastAPIInstrumentor.instrument_app(app)
 
 
 def _envelope(status_code: int, message: str) -> JSONResponse:
@@ -50,3 +63,16 @@ app.include_router(api_router)
 @app.get("/")
 def read_root():
     return {"success": True, "data": None, "message": "Welcome to the Queue Service API"}
+
+
+@app.get("/metrics")
+def metrics():
+    return metrics_endpoint()
+
+
+@app.get("/health", response_model=APIResponse[dict], tags=["Health"])
+def health_check():
+    return ok(
+        {"status": "healthy", "service": settings.PROJECT_NAME},
+        "Service is healthy",
+    )

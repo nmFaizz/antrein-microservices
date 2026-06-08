@@ -32,6 +32,10 @@ services:
       - "8001:8000"
     environment:
       DATABASE_URL: postgresql://${QUEUE_DB_USER}:${QUEUE_DB_PASSWORD}@queue-service-db:5432/${QUEUE_DB_NAME}
+      OTEL_SERVICE_NAME: "Queue Service"
+      ENV: "development"
+      SERVICE_VERSION: "1.0.0"
+      # OTEL_EXPORTER_OTLP_ENDPOINT / LOKI_URL use code defaults (jaeger:4318, loki:3100)
     depends_on:
       queue-service-db:
         condition: service_healthy
