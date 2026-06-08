@@ -5,6 +5,7 @@ import axios, {
 } from "axios";
 
 import { type ApiResponse, isApiResponse } from "./api-response";
+import { getToken } from "./auth";
 
 /**
  * Shared axios instance. Point it at the backend gateway via
@@ -17,10 +18,9 @@ export const http: AxiosInstance = axios.create({
   },
 });
 
-// Attach auth / tracing headers here when needed.
 http.interceptors.request.use((config) => {
-  // const token = getToken();
-  // if (token) config.headers.Authorization = `Bearer ${token}`;
+  const token = getToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
