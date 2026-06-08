@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Menu Preorder Service"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = os.getenv("SECRET_KEY")
+    QUEUE_SERVICE_URL: str = os.getenv("QUEUE_SERVICE_URL") or "http://queue-service:8000"
     
     @property
     def DATABASE_URL(self) -> str:
