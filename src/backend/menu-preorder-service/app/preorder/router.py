@@ -21,6 +21,14 @@ def list_preorders(session: Session = Depends(get_session), current_user = Depen
     preorders = session.exec(select(Preorder)).all()
     return ok(preorders, "Preorders retrieved successfully")
 
+@router.get("/me", response_model=APIResponse[List[PreorderResponse]])
+def list_user_preorders(session: Session = Depends(get_session), current_user = Depends(get_current_user)):
+    """
+    List preorders for the current user.
+    """
+    preorders = session.exec(select(Preorder).where(Preorder.user_id == current_user["user_id"])).all()
+    return ok(preorders, "Preorders retrieved successfully")
+
 @router.get("/{preorder_id}", response_model=APIResponse[PreorderResponse])
 def get_preorder(preorder_id: UUID, session: Session = Depends(get_session)):
     """
@@ -102,7 +110,6 @@ def register_queue_for_preorder(user_id: UUID, preorder_id: UUID) -> dict:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Queue service is unavailable: {str(e)}"
         )
-
 
 @router.post("/", response_model=APIResponse[PreorderResponse], status_code=status.HTTP_201_CREATED)
 def create_preorder(preorder_in: PreorderCreate, session: Session = Depends(get_session), current_user = Depends(get_current_user)):
