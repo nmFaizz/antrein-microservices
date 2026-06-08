@@ -112,7 +112,7 @@ class QueueService:
         self.session.commit()
         return self._to_read(queue)
 
-    def call_next(self, data: CallNextRequest) -> QueueRead:
+    def call_next(self, data: CallNextRequest, admin_id: uuid.UUID) -> QueueRead:
         self._require_settings()
         queue_date = data.queue_date or date.today()
         waiting_id = self.resolver.id_for(DefaultStatus.WAITING)
@@ -122,12 +122,12 @@ class QueueService:
 
         self._transition(queue, DefaultStatus.CALLED)
         queue.called_at = _now()
-        queue.called_by = data.admin_id
+        queue.called_by = admin_id
         self._log(
             queue,
             DefaultStatus.WAITING,
             DefaultStatus.CALLED,
-            data.admin_id,
+            admin_id,
             TriggerType.ADMIN,
         )
         self.notification_service.create_and_dispatch(
@@ -139,16 +139,16 @@ class QueueService:
         self._sync_preorder(queue, read)
         return read
 
-    def skip(self, queue_id: uuid.UUID, data: SkipRequest) -> QueueRead:
+    def skip(self, queue_id: uuid.UUID, data: SkipRequest, admin_id: Optional[uuid.UUID] = None) -> QueueRead:
         queue = self._get_or_404(queue_id)
         current = self.resolver.name_for(queue.status_id)
         self._transition(queue, DefaultStatus.SKIPPED)
-        queue.skipped_by = data.admin_id
+        queue.skipped_by = admin_id
         self._log(
             queue,
             current,
             DefaultStatus.SKIPPED,
-            data.admin_id,
+            admin_id,
             data.trigger_type,
             notes=data.notes,
         )
@@ -161,16 +161,16 @@ class QueueService:
         self._sync_preorder(queue, read)
         return read
 
-    def serve(self, queue_id: uuid.UUID, data: ServeRequest) -> QueueRead:
+    def serve(self, queue_id: uuid.UUID, data: ServeRequest, admin_id: uuid.UUID) -> QueueRead:
         queue = self._get_or_404(queue_id)
         self._transition(queue, DefaultStatus.SERVED)
         queue.served_at = _now()
-        queue.served_by = data.admin_id
+        queue.served_by = admin_id
         self._log(
             queue,
             DefaultStatus.CALLED,
             DefaultStatus.SERVED,
-            data.admin_id,
+            admin_id,
             TriggerType.ADMIN,
         )
         self._recompute_avg_serve_time(queue.queue_date)
@@ -180,7 +180,7 @@ class QueueService:
         self._sync_preorder(queue, read, preorder_status="confirmed")
         return read
 
-    def requeue(self, queue_id: uuid.UUID, data: RequeueRequest) -> QueueRead:
+    def requeue(self, queue_id: uuid.UUID, data: RequeueRequest, admin_id: uuid.UUID) -> QueueRead:
         source = self._get_or_404(queue_id)
         # Mark the original ticket as re-queued (skipped -> re_queued).
         self._transition(source, DefaultStatus.RE_QUEUED)
@@ -188,7 +188,7 @@ class QueueService:
             source,
             DefaultStatus.SKIPPED,
             DefaultStatus.RE_QUEUED,
-            data.admin_id,
+            admin_id,
             TriggerType.ADMIN,
         )
 
@@ -212,7 +212,7 @@ class QueueService:
             new_queue,
             None,
             DefaultStatus.WAITING,
-            data.admin_id,
+            admin_id,
             TriggerType.ADMIN,
             notes=f"Re-queued from {source.queue_number}",
         )
@@ -224,7 +224,7 @@ class QueueService:
         self._sync_preorder(new_queue, read)
         return read
 
-    def cancel(self, queue_id: uuid.UUID, data: CancelRequest) -> QueueRead:
+    def cancel(self, queue_id: uuid.UUID, data: CancelRequest, customer_id: uuid.UUID) -> QueueRead:
         queue = self._get_or_404(queue_id)
         current = self.resolver.name_for(queue.status_id)
         self._transition(queue, DefaultStatus.CANCELLED)
@@ -233,7 +233,7 @@ class QueueService:
             queue,
             current,
             DefaultStatus.CANCELLED,
-            data.customer_id,
+            customer_id,
             TriggerType.CUSTOMER,
         )
         self._emit_position_notifications(queue.queue_date)

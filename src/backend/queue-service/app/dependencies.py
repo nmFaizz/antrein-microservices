@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session
 
+from app.auth.dependencies import get_current_user, require_admin
 from app.clients.notification_dispatcher import NotificationDispatcher
 from app.clients.preorder_service import PreorderServiceClient
 from app.clients.user_service import UserServiceClient
@@ -20,6 +21,8 @@ from app.services.queue_status_service import QueueStatusService
 from app.services.status_resolver import StatusResolver
 
 SessionDep = Annotated[Session, Depends(get_session)]
+CurrentUserDep = Annotated[dict, Depends(get_current_user)]
+AdminDep = Annotated[dict, Depends(require_admin)]
 
 
 def get_queue_service(session: SessionDep) -> QueueService:

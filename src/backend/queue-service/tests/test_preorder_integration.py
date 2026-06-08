@@ -74,7 +74,7 @@ def test_create_does_not_push(svc, settings_row, recorder):
 
 def test_call_next_pushes_snapshot_no_status(svc, settings_row, recorder):
     q = _create_with_preorder(svc)
-    svc.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+    svc.call_next(CallNextRequest(), uuid.uuid4())
     assert len(recorder.calls) == 1
     call = recorder.calls[0]
     assert call["status"] is None
@@ -91,8 +91,8 @@ def test_call_next_pushes_snapshot_no_status(svc, settings_row, recorder):
 
 def test_serve_pushes_confirmed(svc, settings_row, recorder):
     q = _create_with_preorder(svc)
-    svc.call_next(CallNextRequest(admin_id=uuid.uuid4()))
-    svc.serve(q.id, ServeRequest(admin_id=uuid.uuid4()))
+    svc.call_next(CallNextRequest(), uuid.uuid4())
+    svc.serve(q.id, ServeRequest(), uuid.uuid4())
     assert recorder.calls[-1]["status"] == "confirmed"
     assert recorder.calls[-1]["snapshot"]["status"] == "served"
 
@@ -102,17 +102,17 @@ def test_cancel_pushes_cancelled(svc, settings_row, recorder):
     q = svc.create_queue(
         QueueCreate(customer_id=cust, preorder_id=uuid.uuid4())
     )
-    svc.cancel(q.id, CancelRequest(customer_id=cust))
+    svc.cancel(q.id, CancelRequest(), cust)
     assert recorder.calls[-1]["status"] == "cancelled"
     assert recorder.calls[-1]["snapshot"]["status"] == "cancelled"
 
 
 def test_requeue_pushes_new_queue(svc, settings_row, recorder):
     q = _create_with_preorder(svc)
-    svc.call_next(CallNextRequest(admin_id=uuid.uuid4()))
-    svc.skip(q.id, SkipRequest(admin_id=uuid.uuid4()))
+    svc.call_next(CallNextRequest(), uuid.uuid4())
+    svc.skip(q.id, SkipRequest(trigger_type="admin"), uuid.uuid4())
     recorder.calls.clear()
-    new_q = svc.requeue(q.id, RequeueRequest(admin_id=uuid.uuid4()))
+    new_q = svc.requeue(q.id, RequeueRequest(), uuid.uuid4())
     assert len(recorder.calls) == 1
     # The pushed snapshot is the NEW queue (carrying the same preorder).
     assert recorder.calls[0]["snapshot"]["id"] == str(new_q.id)
@@ -122,5 +122,5 @@ def test_requeue_pushes_new_queue(svc, settings_row, recorder):
 def test_no_preorder_id_skips_sync(svc, settings_row, recorder):
     # Queue created without a preorder_id must never trigger a sync.
     svc.create_queue(QueueCreate(customer_id=uuid.uuid4()))
-    svc.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+    svc.call_next(CallNextRequest(), uuid.uuid4())
     assert recorder.calls == []

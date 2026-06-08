@@ -20,26 +20,24 @@ class CheckInRequest(SQLModel):
 
 
 class CallNextRequest(SQLModel):
-    admin_id: uuid.UUID
     queue_date: Optional[date] = None
 
 
 class ServeRequest(SQLModel):
-    admin_id: uuid.UUID
+    pass
 
 
 class SkipRequest(SQLModel):
-    admin_id: Optional[uuid.UUID] = None
     trigger_type: TriggerType = TriggerType.ADMIN
     notes: Optional[str] = None
 
 
 class RequeueRequest(SQLModel):
-    admin_id: uuid.UUID
+    pass
 
 
 class CancelRequest(SQLModel):
-    customer_id: uuid.UUID
+    pass
 
 
 class QueueRead(SQLModel):
