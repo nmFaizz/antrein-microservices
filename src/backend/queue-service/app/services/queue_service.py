@@ -373,9 +373,13 @@ class QueueService:
         position = self.queue_repo.position_of(queue, waiting_id)
         settings = self.settings_repo.get_active()
         avg = settings.avg_serve_time_mins if settings else 0
-        return QueueRead(
+        read = QueueRead(
             **queue.model_dump(),
             status_name=self.resolver.name_for(queue.status_id),
             current_position=position,
             estimated_wait_minutes=position * avg,
         )
+        # Enrich with preorder data (best-effort).
+        if queue.preorder_id is not None:
+            read.preorder = self.preorder_client.get_preorder(queue.preorder_id)
+        return read

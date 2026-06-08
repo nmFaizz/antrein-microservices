@@ -34,7 +34,7 @@ router = APIRouter(prefix="/queues", tags=["queues"])
     response_model=APIResponse[QueueRead],
     status_code=status.HTTP_201_CREATED,
 )
-def create_queue(payload: QueueCreate, _: AdminDep, service: QueueServiceDep):
+def create_queue(payload: QueueCreate, service: QueueServiceDep):
     queue = service.create_queue(payload)
     return ok(queue, "Queue created")
 

@@ -16,9 +16,13 @@ SECRET = "test-secret-key-0123456789abcdef-xyz"
 
 
 class _FakeResponse:
-    def __init__(self, status_code: int, text: str = ""):
+    def __init__(self, status_code: int, text: str = "", json_data: dict | None = None):
         self.status_code = status_code
         self.text = text
+        self._json_data = json_data or {}
+
+    def json(self):
+        return self._json_data
 
 
 def _notification() -> QueueNotification:
@@ -126,3 +130,66 @@ def test_preorder_client_request_error_swallowed(monkeypatch):
     monkeypatch.setattr(ps_module.httpx, "patch", raise_err)
     # Best-effort: a network error is logged, not raised.
     _client().sync(uuid.uuid4(), {"queue_number": 1})
+
+
+# ----------------------- get_preorder ----------------------- #
+def test_preorder_client_get_noop_when_disabled(monkeypatch):
+    def fail(*args, **kwargs):
+        raise AssertionError("httpx must not be called when disabled")
+
+    monkeypatch.setattr(ps_module.httpx, "get", fail)
+    client = PreorderServiceClient(
+        base_url=None, secret_key=SECRET, service_account_id="svc"
+    )
+    result = client.get_preorder(uuid.uuid4())
+    assert result is None
+
+
+def test_preorder_client_get_success(monkeypatch):
+    captured = {}
+
+    def fake_get(url, timeout):
+        captured["url"] = url
+        return _FakeResponse(
+            200,
+            json_data={
+                "data": {
+                    "id": "uuid123",
+                    "user_id": "user456",
+                    "total_price": 50000.0,
+                    "status": "pending",
+                    "notes": "Pedas",
+                    "created_at": "2026-06-09T00:00:00",
+                    "updated_at": None,
+                    "items": [],
+                    "queue": {"id": "queue789"},  # Should be stripped
+                }
+            },
+        )
+
+    monkeypatch.setattr(ps_module.httpx, "get", fake_get)
+    pid = uuid.uuid4()
+    result = _client().get_preorder(pid)
+
+    assert captured["url"] == f"http://preorder:8000/preorders/{pid}"
+    assert result is not None
+    assert result["id"] == "uuid123"
+    assert result["total_price"] == 50000.0
+    assert "queue" not in result  # Stripped!
+
+
+def test_preorder_client_get_not_found(monkeypatch):
+    monkeypatch.setattr(
+        ps_module.httpx, "get", lambda url, timeout: _FakeResponse(404)
+    )
+    result = _client().get_preorder(uuid.uuid4())
+    assert result is None
+
+
+def test_preorder_client_get_error_swallowed(monkeypatch):
+    def raise_err(*args, **kwargs):
+        raise httpx.ConnectError("unreachable")
+
+    monkeypatch.setattr(ps_module.httpx, "get", raise_err)
+    result = _client().get_preorder(uuid.uuid4())
+    assert result is None

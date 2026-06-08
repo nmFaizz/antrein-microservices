@@ -37,6 +37,9 @@ class RecordingPreorderClient:
             }
         )
 
+    def get_preorder(self, preorder_id):
+        return None  # Not mocked in tests
+
 
 @pytest.fixture(name="recorder")
 def recorder_fixture():

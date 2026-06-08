@@ -1,6 +1,6 @@
 import uuid
 from datetime import date, datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlmodel import SQLModel
 
@@ -41,7 +41,7 @@ class CancelRequest(SQLModel):
 
 
 class QueueRead(SQLModel):
-    """Queue representation returned to clients, with computed fields."""
+    """Queue representation returned to clients, with computed fields and optional preorder data."""
 
     id: uuid.UUID
     user_id: uuid.UUID
@@ -74,3 +74,6 @@ class QueueRead(SQLModel):
     # Computed (not stored), see business doc section 6.
     current_position: int
     estimated_wait_minutes: int
+
+    # Enriched from preorder-service; None if unavailable or preorder_id is null.
+    preorder: Optional[Any] = None
