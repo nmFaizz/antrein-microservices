@@ -11,29 +11,27 @@ import { H2, Muted } from "@/components/ui/typography";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MenuItem } from "@/features/menu/types";
-import { mockMenu } from "@/features/menu/mock";
+import { MENU_CATEGORIES } from "@/features/menu/types";
+import { useMenuItems } from "@/features/menu/queries";
 
-const categories = [
-  { label: "Semua", value: "" },
-  { label: "Makanan", value: "makanan" },
-  { label: "Minuman", value: "minuman" },
-  { label: "Camilan", value: "snacks" },
-];
+const ALL_CATEGORIES = [{ label: "Semua", value: "" }, ...MENU_CATEGORIES];
 
 export default function MenuPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const { add, itemCount, total } = useCart();
 
+  const { data: menuItems = [], isLoading, isError } = useMenuItems();
+
   const filtered = useMemo(() => {
-    return mockMenu.filter((item) => {
+    return menuItems.filter((item) => {
       const matchSearch = item.name
         .toLowerCase()
         .includes(search.toLowerCase());
       const matchCategory = !category || item.category === category;
       return matchSearch && matchCategory && !item.is_deleted;
     });
-  }, [search, category]);
+  }, [menuItems, search, category]);
 
   return (
     <div className="flex flex-col gap-4 px-4 py-5 pb-24">
@@ -46,7 +44,7 @@ export default function MenuPage() {
       />
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {categories.map((cat) => (
+        {ALL_CATEGORIES.map((cat) => (
           <button
             key={cat.value}
             type="button"
@@ -63,16 +61,33 @@ export default function MenuPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        {filtered.map((item) => (
-          <MenuCard key={item.id} item={item} onAdd={add} />
-        ))}
-        {filtered.length === 0 && (
-          <Muted className="col-span-full py-12 text-center">
-            Menu tidak ditemukan.
-          </Muted>
-        )}
-      </div>
+      {isLoading && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders
+            <div key={i} className="h-52 animate-pulse rounded-lg bg-muted" />
+          ))}
+        </div>
+      )}
+
+      {isError && (
+        <Muted className="py-12 text-center">
+          Gagal memuat menu. Coba lagi nanti.
+        </Muted>
+      )}
+
+      {!isLoading && !isError && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          {filtered.map((item) => (
+            <MenuCard key={item.id} item={item} onAdd={add} />
+          ))}
+          {filtered.length === 0 && (
+            <Muted className="col-span-full py-12 text-center">
+              Menu tidak ditemukan.
+            </Muted>
+          )}
+        </div>
+      )}
 
       {itemCount > 0 && (
         <div className="fixed bottom-16 left-0 right-0 z-20 border-t border-border bg-card px-4 py-3 shadow-lg">
@@ -100,7 +115,7 @@ function MenuCard({
 }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="aspect-[4/3] bg-muted" />
+      {/* <div className="aspect-4/3 bg-muted" /> */}
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <span className="font-semibold leading-tight">{item.name}</span>
         {item.description && (

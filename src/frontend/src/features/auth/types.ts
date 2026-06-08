@@ -21,4 +21,5 @@ export interface AuthToken {
 export interface AuthUser {
   id: string;
   username: string;
+  role: "admin" | "user";
 }

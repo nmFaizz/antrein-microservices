@@ -9,9 +9,9 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { login } from "@/features/auth/api";
+import { getMe, login } from "@/features/auth/api";
 import { loginSchema, type LoginValues } from "@/features/auth/types";
-import { setToken } from "@/lib/auth";
+import { setRole, setToken } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,8 +25,10 @@ export default function LoginPage() {
     setError(null);
     try {
       const token = await login(values);
-      setToken(token.access_token);
-      router.push("/");
+      setToken(token.access_token); // cookie set before getMe so interceptor picks it up
+      const user = await getMe();
+      setRole(user.role);
+      router.push(user.role === "admin" ? "/admin/dashboard" : "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     }
