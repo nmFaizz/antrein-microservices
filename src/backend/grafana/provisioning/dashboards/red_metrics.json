@@ -436,8 +436,8 @@
     "list": []
   },
   "time": {
-    "from": "2026-06-08T08:58:22.176Z",
-    "to": "2026-06-08T11:36:13.024Z"
+    "from": "now-15m",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
