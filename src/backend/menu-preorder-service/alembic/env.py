@@ -6,7 +6,7 @@ from sqlmodel import SQLModel
 
 from alembic import context
 from app.menu.models import Menu
-from app.order.models import Order, OrderItem
+from app.preorder.models import Preorder, PreorderItem
 
 
 # this is the Alembic Config object, which provides
