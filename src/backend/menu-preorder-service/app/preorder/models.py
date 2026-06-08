@@ -35,6 +35,7 @@ class Preorder(PreorderBase, table=True):
 
     id: UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
     user_id: UUID = Field(schema_extra={"examples": [str(uuid.uuid4())]})
+    customer_name: Optional[str] = Field(default=None, max_length=100)
     total_price: float = Field(schema_extra={"examples": [30000.0]})
     status: PreorderStatus = Field(default=PreorderStatus.PENDING, schema_extra={"examples": [PreorderStatus.PENDING]})
     queue: Optional[dict] = Field(default=None, sa_column=Column(JSON, nullable=True))
@@ -68,6 +69,7 @@ class PreorderItemResponse(SQLModel):
 class PreorderResponse(PreorderBase):
     id: UUID
     user_id: UUID
+    customer_name: Optional[str] = None
     total_price: float
     status: PreorderStatus
     created_at: datetime

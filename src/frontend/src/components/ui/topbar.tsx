@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useCurrentUser } from "@/features/auth/hooks";
 import { clearToken } from "@/lib/auth";
 
@@ -10,10 +12,12 @@ import { BellIcon, LogOutIcon, UserIcon } from "./icons";
 /** Admin top bar: spacer + notifications + current user + logout. */
 export function Topbar() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
 
   function handleLogout() {
     clearToken();
+    queryClient.clear();
     router.push("/login");
   }
 

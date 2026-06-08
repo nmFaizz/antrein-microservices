@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { PlusIcon } from "@/components/ui/icons";
 import { SearchInput } from "@/components/ui/search-input";
@@ -96,9 +98,9 @@ export default function MenuPage() {
               <span className="text-sm font-medium">{itemCount} item</span>
               <span className="text-lg font-bold">{formatRupiah(total)}</span>
             </div>
-            <a href="/preorder">
+            <Link href="/preorder">
               <Button size="lg">Pesan Sekarang</Button>
-            </a>
+            </Link>
           </div>
         </div>
       )}

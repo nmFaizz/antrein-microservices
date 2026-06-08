@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = os.getenv("SECRET_KEY")
     QUEUE_SERVICE_URL: str = os.getenv("QUEUE_SERVICE_URL") or "http://queue-service:8000"
+    USER_SERVICE_URL: str = os.getenv("USER_SERVICE_URL") or "http://user-service:8000"
     
     @property
     def DATABASE_URL(self) -> str:

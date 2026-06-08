@@ -7,21 +7,22 @@ from app.preorder.models import Preorder, PreorderItem, PreorderStatus
 
 def test_list_all_preorders_as_admin(client, mock_auth_service, session):
     mock_auth_service.current_user = mock_auth_service.admin
-    
-    # Seed a preorder
+
     preorder = Preorder(
         user_id=UUID("11111111-1111-1111-1111-111111111111"),
+        customer_name="alice",
         total_price=15000.0,
-        status=PreorderStatus.PENDING
+        status=PreorderStatus.PENDING,
     )
     session.add(preorder)
     session.commit()
-    
+
     response = client.get("/preorders/")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["data"]
     assert len(data) == 1
     assert data[0]["total_price"] == 15000.0
+    assert data[0]["customer_name"] == "alice"
 
 def test_list_all_preorders_as_user_forbidden(client, mock_auth_service):
     mock_auth_service.current_user = mock_auth_service.user
@@ -31,20 +32,19 @@ def test_list_all_preorders_as_user_forbidden(client, mock_auth_service):
 def test_list_user_preorders(client, mock_auth_service, session):
     mock_auth_service.current_user = mock_auth_service.user
     user_id = mock_auth_service.user["user_id"]
-    
-    # Preorder for this user
-    p1 = Preorder(user_id=user_id, total_price=10000.0, status=PreorderStatus.PENDING)
-    # Preorder for another user
-    p2 = Preorder(user_id=uuid4(), total_price=20000.0, status=PreorderStatus.PENDING)
-    
+
+    p1 = Preorder(user_id=user_id, customer_name="bob", total_price=10000.0, status=PreorderStatus.PENDING)
+    p2 = Preorder(user_id=uuid4(), customer_name="other", total_price=20000.0, status=PreorderStatus.PENDING)
+
     session.add_all([p1, p2])
     session.commit()
-    
+
     response = client.get("/preorders/me")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["data"]
     assert len(data) == 1
     assert data[0]["total_price"] == 10000.0
+    assert data[0]["customer_name"] == "bob"
 
 def test_get_preorder_by_id(client, session):
     preorder = Preorder(
@@ -66,43 +66,68 @@ def test_get_preorder_not_found(client):
     response = client.get(f"/preorders/{uuid4()}")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
+@patch("app.preorder.router.fetch_current_username", return_value="testuser")
 @patch("app.preorder.router.register_queue_for_preorder")
-def test_create_preorder_success(mock_register, client, mock_auth_service, session):
+def test_create_preorder_success(mock_register, mock_fetch_name, client, mock_auth_service, session):
     mock_auth_service.current_user = mock_auth_service.user
-    
-    # Mock return value for the Queue Service request
+
     mock_register.return_value = {
         "queue_number": 5,
         "id": "55555555-5555-5555-5555-555555555555",
         "position": 2,
         "estimated_time": "15 minutes",
-        "status": "waiting"
+        "status": "waiting",
     }
-    
-    # Seed available menu items
+
     menu_item = Menu(name="Nasi Uduk", price=10000.0, category=MenuCategory.MAKANAN, is_available=True, is_deleted=False)
     session.add(menu_item)
     session.commit()
     session.refresh(menu_item)
-    
+
     payload = {
         "notes": "Pakai sendok",
-        "items": [
-            {"menu_item_id": str(menu_item.id), "quantity": 3}
-        ]
+        "items": [{"menu_item_id": str(menu_item.id), "quantity": 3}],
     }
-    
+
     response = client.post("/preorders/", json=payload)
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()["data"]
-    
-    # 3 * 10000.0 = 30000.0
-    assert data["total_price"] == 30000.0
+
+    assert data["total_price"] == 30000.0          # 3 * 10000.0
     assert data["status"] == "pending"
     assert data["notes"] == "Pakai sendok"
+    assert data["customer_name"] == "testuser"
     assert data["queue"]["queue_number"] == 5
     assert len(data["items"]) == 1
     assert data["items"][0]["subtotal"] == 30000.0
+
+
+@patch("app.preorder.router.fetch_current_username", return_value=None)
+@patch("app.preorder.router.register_queue_for_preorder")
+def test_create_preorder_customer_name_none_when_user_service_unavailable(
+    mock_register, mock_fetch_name, client, mock_auth_service, session
+):
+    """customer_name falls back to None gracefully when user-service is unreachable."""
+    mock_auth_service.current_user = mock_auth_service.user
+
+    mock_register.return_value = {
+        "queue_number": 1,
+        "id": str(uuid4()),
+        "position": 1,
+        "estimated_time": None,
+        "status": "waiting",
+    }
+
+    menu_item = Menu(name="Es Teh", price=5000.0, category=MenuCategory.MINUMAN, is_available=True, is_deleted=False)
+    session.add(menu_item)
+    session.commit()
+    session.refresh(menu_item)
+
+    payload = {"items": [{"menu_item_id": str(menu_item.id), "quantity": 1}]}
+
+    response = client.post("/preorders/", json=payload)
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json()["data"]["customer_name"] is None
 
 def test_create_preorder_empty_items(client, mock_auth_service):
     mock_auth_service.current_user = mock_auth_service.user

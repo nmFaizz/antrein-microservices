@@ -1,166 +1,146 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { CheckIcon, ClockIcon, CloseIcon } from "@/components/ui/icons";
-import { useCart } from "@/components/ui/cart-provider";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CartIcon, CloseIcon, MinusIcon, PlusIcon } from "@/components/ui/icons";
+import { useCart } from "@/components/ui/cart-provider";
 import { H2, Muted } from "@/components/ui/typography";
 import { formatRupiah } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import type { PreorderStatus } from "@/features/preorder/types";
+import { useCreatePreorder } from "@/features/preorder/queries";
 
-const mockQueue = {
-  queueNumber: "A005",
-  position: 3,
-  estimatedWait: 12,
-  status: "waiting" as const,
-};
+export default function CartPage() {
+  const router = useRouter();
+  const { lines, total, setQuantity, remove, clear } = useCart();
+  const [notes, setNotes] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-const mockOrder = {
-  id: "ORD-2024-0042",
-  status: "pending" as PreorderStatus,
-  notes: "Tidak pakai pedas",
-  createdAt: "10:32",
-  items: [{ name: "Nasi Goreng Spesial", quantity: 2, subtotal: 50000 }],
-  totalPrice: 50000,
-};
+  const createPreorder = useCreatePreorder();
 
-const queueLabel: Record<string, { label: string; variant: "warning" | "success" | "info" }> = {
-  waiting: { label: "Menunggu", variant: "warning" },
-  called: { label: "Dipanggil", variant: "success" },
-  serving: { label: "Dilayani", variant: "info" },
-};
-
-const statusLabel: Record<PreorderStatus, string> = {
-  pending: "Menunggu Konfirmasi",
-  confirmed: "Dikonfirmasi",
-  cancelled: "Dibatalkan",
-};
-
-export default function PreorderPage() {
-  const { total } = useCart();
-
-  function getSteps(status: PreorderStatus) {
-    if (status === "cancelled") {
-      return [
-        { key: "pending", label: "Pesanan Diterima", done: true, cancelled: false },
-        { key: "cancelled", label: "Pesanan Dibatalkan", done: false, cancelled: true },
-      ];
+  async function handleSubmit() {
+    setSubmitError(null);
+    try {
+      await createPreorder.mutateAsync({
+        notes: notes.trim() || null,
+        items: lines.map((l) => ({ menu_item_id: l.menu.id, quantity: l.quantity })),
+      });
+      clear();
+      setNotes("");
+      router.push("/preorder/history");
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Gagal membuat pesanan");
     }
-    return [
-      { key: "pending", label: "Pesanan Diterima", done: status !== "pending", cancelled: false },
-      { key: "confirmed", label: "Pesanan Dikonfirmasi", done: status === "confirmed", cancelled: false },
-    ];
   }
 
-  const steps = getSteps(mockOrder.status);
-  const q = queueLabel[mockQueue.status];
+  // ── Empty cart ──────────────────────────────────────────────────────────────
+  if (lines.length === 0) {
+    return (
+      <div className="flex flex-col gap-4 px-4 py-5">
+        <H2>Keranjang</H2>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <CartIcon className="size-12 text-muted-foreground/30" />
+          <Muted>Keranjang kamu kosong.</Muted>
+          <div className="flex flex-col gap-2 w-full max-w-xs">
+            <Link href="/menu">
+              <Button className="w-full">Lihat Menu</Button>
+            </Link>
+            <Link href="/preorder/history">
+              <Button variant="outline" className="w-full">Lihat Riwayat Pesanan</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const orderPrice = mockOrder.totalPrice || total;
-
+  // ── Checkout ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-4 px-4 py-5">
-      <H2>Pesanan Saya</H2>
-
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
-          <span className="text-5xl font-bold tracking-tight text-primary-600">
-            {mockQueue.queueNumber}
-          </span>
-          <Muted>Nomor antrian kamu</Muted>
-          <Badge variant={q.variant}>{q.label}</Badge>
-          <div className="mt-2 grid w-full grid-cols-2 gap-3">
-            <div className="rounded-md bg-muted p-3">
-              <span className="text-xs text-muted-foreground">Posisi</span>
-              <p className="text-lg font-bold">{mockQueue.position} / antrean</p>
-            </div>
-            <div className="rounded-md bg-muted p-3">
-              <span className="text-xs text-muted-foreground">Estimasi</span>
-              <p className="text-lg font-bold">~{mockQueue.estimatedWait} menit</p>
-            </div>
-          </div>
-          <span className="text-xs text-muted-foreground">Terakhir diperbarui beberapa detik lalu</span>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col gap-4 px-4 py-5 pb-8">
+      <H2>Keranjang</H2>
 
       <Card>
         <CardHeader>
-          <CardTitle>Status Pesanan</CardTitle>
+          <CardTitle>Item Pesanan</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4">
-            {steps.map((step, idx) => (
-              <div key={step.key} className="flex items-start gap-3">
-                <span
-                  className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                    step.done && !step.cancelled && "bg-success text-success-foreground",
-                    step.cancelled && "bg-destructive text-destructive-foreground",
-                    !step.done && !step.cancelled && "border-2 border-muted-foreground/30 bg-card text-muted-foreground",
-                  )}
-                >
-                  {step.done || step.cancelled ? (
-                    step.cancelled ? <CloseIcon className="size-3.5" /> : <CheckIcon className="size-3.5" />
-                  ) : (
-                    idx + 1
-                  )}
-                </span>
-                <div className="flex flex-col gap-0.5">
-                  <span
-                    className={cn(
-                      "text-sm font-medium",
-                      step.cancelled && "text-destructive",
-                      !step.done && !step.cancelled && "text-muted-foreground",
-                    )}
-                  >
-                    {step.label}
+          <div className="flex flex-col gap-3">
+            {lines.map((line) => (
+              <div key={line.menu.id} className="flex items-center justify-between gap-2">
+                <div className="flex flex-1 flex-col">
+                  <span className="text-sm font-medium">{line.menu.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatRupiah(line.menu.price)} / item
                   </span>
-                  {step.done && (
-                    <span className="text-xs text-muted-foreground">{mockOrder.createdAt}</span>
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Pesanan Kamu</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2">
-            {mockOrder.items.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm">
-                <span>
-                  {item.quantity}x {item.name}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(line.menu.id, line.quantity - 1)}
+                    className="flex size-7 items-center justify-center rounded-full bg-muted transition hover:bg-accent"
+                    aria-label="Kurangi"
+                  >
+                    <MinusIcon className="size-3.5" />
+                  </button>
+                  <span className="w-6 text-center text-sm font-medium">{line.quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(line.menu.id, line.quantity + 1)}
+                    className="flex size-7 items-center justify-center rounded-full bg-muted transition hover:bg-accent"
+                    aria-label="Tambah"
+                  >
+                    <PlusIcon className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(line.menu.id)}
+                    className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                    aria-label="Hapus"
+                  >
+                    <CloseIcon className="size-3.5" />
+                  </button>
+                </div>
+                <span className="w-24 text-right text-sm font-semibold">
+                  {formatRupiah(line.menu.price * line.quantity)}
                 </span>
-                <span className="font-medium">{formatRupiah(item.subtotal)}</span>
               </div>
             ))}
-            <hr className="my-2 border-border" />
+            <hr className="border-border" />
             <div className="flex items-center justify-between font-bold">
               <span>Total</span>
-              <span>{formatRupiah(orderPrice)}</span>
+              <span>{formatRupiah(total)}</span>
             </div>
-            {mockOrder.notes && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Catatan: {mockOrder.notes}
-              </p>
-            )}
-            <span className="mt-1 text-xs text-muted-foreground">
-              #{mockOrder.id}
-            </span>
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Catatan</CardTitle></CardHeader>
+        <CardContent>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Contoh: tidak pakai pedas, tanpa bawang…"
+            rows={3}
+            className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </CardContent>
+      </Card>
+
+      {submitError && (
+        <p className="text-sm text-destructive">{submitError}</p>
+      )}
+
+      <Button
+        size="lg"
+        className="w-full"
+        onClick={handleSubmit}
+        disabled={createPreorder.isPending}
+      >
+        {createPreorder.isPending ? "Memproses…" : "Buat Pesanan"}
+      </Button>
     </div>
   );
 }

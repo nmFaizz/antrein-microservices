@@ -7,11 +7,12 @@ import pytest
 from sqlmodel import SQLModel, create_engine, Session
 from sqlmodel.pool import StaticPool
 from fastapi.testclient import TestClient
+from fastapi.security import HTTPAuthorizationCredentials
 from uuid import UUID
 
 from app.main import app
 from app.db.database import get_session
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import get_current_user, require_admin, bearer_scheme
 from app.menu.models import Menu
 from app.preorder.models import Preorder, PreorderItem
 
@@ -59,10 +60,14 @@ def client_fixture(session):
     def get_session_override():
         return session
     
+    def mock_bearer():
+        return HTTPAuthorizationCredentials(scheme="bearer", credentials="test-token")
+
     # Override FastAPI dependencies
     app.dependency_overrides[get_session] = get_session_override
     app.dependency_overrides[get_current_user] = mock_auth.get_current_user
     app.dependency_overrides[require_admin] = mock_auth.require_admin
+    app.dependency_overrides[bearer_scheme] = mock_bearer
     
     with TestClient(app) as client:
         yield client

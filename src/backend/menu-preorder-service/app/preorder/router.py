@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlmodel import Session, select
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 import httpx
 
@@ -8,10 +9,26 @@ from app.db.database import get_session
 from app.db.config import settings
 from app.preorder.models import Preorder, PreorderResponse, PreorderCreate, PreorderUpdate, PreorderItem, PreorderStatus, PreorderItemCreate
 from app.menu.models import Menu
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import get_current_user, require_admin, bearer_scheme
 from app.core.response import APIResponse, ok
 
 router = APIRouter(prefix="/preorders", tags=["Preorders"])
+
+
+def fetch_current_username(token: str) -> Optional[str]:
+    """Call user-service /users/me with the user's own token to get their username."""
+    try:
+        resp = httpx.get(
+            f"{settings.USER_SERVICE_URL}/users/me",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=5.0,
+        )
+        if resp.status_code == 200:
+            return resp.json().get("data", {}).get("username")
+    except httpx.RequestError:
+        pass
+    return None
+
 
 @router.get("/", response_model=APIResponse[List[PreorderResponse]])
 def list_preorders(session: Session = Depends(get_session), current_user = Depends(require_admin)):
@@ -112,7 +129,12 @@ def register_queue_for_preorder(user_id: UUID, preorder_id: UUID) -> dict:
         )
 
 @router.post("/", response_model=APIResponse[PreorderResponse], status_code=status.HTTP_201_CREATED)
-def create_preorder(preorder_in: PreorderCreate, session: Session = Depends(get_session), current_user = Depends(get_current_user)):
+def create_preorder(
+    preorder_in: PreorderCreate,
+    session: Session = Depends(get_session),
+    current_user = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+):
     """
     Create a new preorder.
     """
@@ -125,9 +147,13 @@ def create_preorder(preorder_in: PreorderCreate, session: Session = Depends(get_
     # 1. Validate menu & calculate pricing
     total_price, preorder_items = validate_and_calculate_items(preorder_in.items, session)
 
-    # 2. Save preorder with pending status
+    # 2. Resolve caller's username from user-service (best-effort, non-fatal)
+    customer_name = fetch_current_username(credentials.credentials)
+
+    # 3. Save preorder with pending status
     db_preorder = Preorder(
         user_id=current_user["user_id"],
+        customer_name=customer_name,
         notes=preorder_in.notes,
         total_price=total_price,
         status=PreorderStatus.PENDING,
@@ -137,7 +163,7 @@ def create_preorder(preorder_in: PreorderCreate, session: Session = Depends(get_
     session.commit()
     session.refresh(db_preorder)
 
-    # 3. Create queue entry and assign to preorder
+    # 4. Create queue entry and assign to preorder
     queue_info = register_queue_for_preorder(db_preorder.user_id, db_preorder.id)
     db_preorder.queue = queue_info
     
