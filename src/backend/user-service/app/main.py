@@ -1,14 +1,52 @@
-from fastapi import FastAPI
+import logging
 
-app = FastAPI()
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from app.lib.exceptions import UserServiceError
+from app.routers import api_router
+from app.schemas.response import fail
+
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="User Service API", version="1.0")
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+def _envelope(status_code: int, message: str) -> JSONResponse:
+    return JSONResponse(status_code=status_code, content=fail(message).model_dump())
 
 
-if __name__ == "__main__":
-    import uvicorn
+@app.exception_handler(UserServiceError)
+def handle_domain_error(request: Request, exc: UserServiceError) -> JSONResponse:
+    return _envelope(exc.status_code, exc.message)
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+
+@app.exception_handler(RequestValidationError)
+def handle_validation_error(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "success": False,
+            "data": exc.errors(),
+            "message": "Validation error",
+        },
+    )
+
+
+@app.exception_handler(Exception)
+def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled error: %s", exc)
+    return _envelope(
+        status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal server error"
+    )
+
+
+app.include_router(api_router)
+
+
+@app.get("/")
+def read_root():
+    return {"success": True, "data": None, "message": "Welcome to the User Service API"}
