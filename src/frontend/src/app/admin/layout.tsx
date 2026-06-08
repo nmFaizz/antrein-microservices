@@ -1,0 +1,21 @@
+import { Sidebar } from "@/components/ui/sidebar";
+import { Topbar } from "@/components/ui/topbar";
+
+/** Admin dashboard shell: fixed sidebar + topbar + scrollable content. */
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen w-full">
+      <Sidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar />
+        <main className="flex-1 overflow-y-auto bg-background p-5 lg:p-8">
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        </main>
+      </div>
+    </div>
+  );
+}

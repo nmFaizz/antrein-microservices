@@ -70,6 +70,10 @@ services:
       - "8001:8000"
     environment:
       DATABASE_URL: postgresql://${QUEUE_DB_USER}:${QUEUE_DB_PASSWORD}@queue-service-db:5432/${QUEUE_DB_NAME}
+      OTEL_SERVICE_NAME: "Queue Service"
+      ENV: "development"
+      SERVICE_VERSION: "1.0.0"
+      # OTEL_EXPORTER_OTLP_ENDPOINT / LOKI_URL use code defaults (jaeger:4318, loki:3100)
     depends_on:
       queue-service-db:
         condition: service_healthy
@@ -90,7 +94,39 @@ services:
       timeout: 5s
       retries: 5
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    ports: ["3000:3000"]
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on: [prometheus, loki, jaeger]
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  loki:
+    image: grafana/loki:2.9.0
+    ports: ["3100:3100"]
+    command: -config.file=/etc/loki/local-config.yml
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yml:ro
+
 volumes:
   user_data:
   menu_preorder_data:
   queue_service_data:
+  

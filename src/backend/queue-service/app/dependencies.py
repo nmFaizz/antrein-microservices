@@ -4,8 +4,10 @@ from fastapi import Depends
 from sqlmodel import Session
 
 from app.clients.notification_dispatcher import NotificationDispatcher
+from app.clients.preorder_service import PreorderServiceClient
 from app.clients.user_service import UserServiceClient
 from app.db.session import get_session
+from app.lib.config import settings
 from app.repositories.queue import QueueRepository
 from app.repositories.queue_notification import QueueNotificationRepository
 from app.repositories.queue_settings import QueueSettingsRepository
@@ -26,6 +28,11 @@ def get_queue_service(session: SessionDep) -> QueueService:
     notification_service = NotificationService(
         notification_repo, UserServiceClient(), NotificationDispatcher()
     )
+    preorder_client = PreorderServiceClient(
+        base_url=settings.PREORDER_SERVICE_URL,
+        secret_key=settings.SECRET_KEY,
+        service_account_id=settings.SERVICE_ACCOUNT_ID,
+    )
     return QueueService(
         session=session,
         queue_repo=QueueRepository(session),
@@ -34,6 +41,7 @@ def get_queue_service(session: SessionDep) -> QueueService:
         notification_repo=notification_repo,
         resolver=StatusResolver(status_repo),
         notification_service=notification_service,
+        preorder_client=preorder_client,
     )
 
 
