@@ -11,6 +11,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from app.clients.notification_dispatcher import NotificationDispatcher
+from app.clients.preorder_service import PreorderServiceClient
 from app.clients.user_service import UserServiceClient
 from app.db.session import get_session
 from app.lib.constants import DEFAULT_STATUS_COLORS, DefaultStatus
@@ -75,6 +76,10 @@ def queue_service_fixture(
     notification_service = NotificationService(
         notification_repo, UserServiceClient(), NotificationDispatcher()
     )
+    # No-op preorder client (base_url=None) so the callback is disabled in tests.
+    preorder_client = PreorderServiceClient(
+        base_url=None, secret_key=None, service_account_id="test-account"
+    )
     return QueueService(
         session=session,
         queue_repo=QueueRepository(session),
@@ -83,6 +88,7 @@ def queue_service_fixture(
         notification_repo=notification_repo,
         resolver=StatusResolver(QueueStatusRepository(session)),
         notification_service=notification_service,
+        preorder_client=preorder_client,
     )
 
 
