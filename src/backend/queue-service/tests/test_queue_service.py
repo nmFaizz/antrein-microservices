@@ -118,7 +118,7 @@ def test_call_next_prioritizes_checked_in(queue_service, session, settings_row):
     q2 = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
     queue_service.check_in(q2.id)
     admin = uuid.uuid4()
-    called = queue_service.call_next(CallNextRequest(admin_id=admin))
+    called = queue_service.call_next(CallNextRequest(), admin)
     assert called.id == q2.id
     assert called.status_name == "called"
     assert called.called_by == admin
@@ -127,15 +127,15 @@ def test_call_next_prioritizes_checked_in(queue_service, session, settings_row):
 
 def test_call_next_none_available(queue_service, settings_row):
     with pytest.raises(NoQueueToCall):
-        queue_service.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+        queue_service.call_next(CallNextRequest(), uuid.uuid4())
 
 
 # ------------------------------ serve ------------------------------ #
 def test_serve_and_avg_recompute(queue_service, session, settings_row):
     q = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
     admin = uuid.uuid4()
-    queue_service.call_next(CallNextRequest(admin_id=admin))
-    served = queue_service.serve(q.id, ServeRequest(admin_id=admin))
+    queue_service.call_next(CallNextRequest(), admin)
+    served = queue_service.serve(q.id, ServeRequest(), admin)
     assert served.status_name == "served"
     assert served.served_by == admin
     logs = _logs(session, q.id)
@@ -147,7 +147,7 @@ def test_serve_and_avg_recompute(queue_service, session, settings_row):
 def test_serve_invalid_from_waiting(queue_service, settings_row):
     q = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
     with pytest.raises(InvalidStateTransition):
-        queue_service.serve(q.id, ServeRequest(admin_id=uuid.uuid4()))
+        queue_service.serve(q.id, ServeRequest(), uuid.uuid4())
 
 
 def test_recompute_avg_no_durations_is_noop(queue_service, settings_row):
@@ -162,10 +162,10 @@ def test_recompute_avg_no_durations_is_noop(queue_service, settings_row):
 # ------------------------------ skip ------------------------------ #
 def test_skip_admin(queue_service, session, settings_row):
     q = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
-    queue_service.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+    queue_service.call_next(CallNextRequest(), uuid.uuid4())
     admin = uuid.uuid4()
     skipped = queue_service.skip(
-        q.id, SkipRequest(admin_id=admin, trigger_type=TriggerType.ADMIN, notes="no show")
+        q.id, SkipRequest(trigger_type=TriggerType.ADMIN, notes="no show"), admin
     )
     assert skipped.status_name == "skipped"
     assert skipped.skipped_by == admin
@@ -177,9 +177,9 @@ def test_skip_admin(queue_service, session, settings_row):
 
 def test_skip_system_trigger(queue_service, session, settings_row):
     q = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
-    queue_service.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+    queue_service.call_next(CallNextRequest(), uuid.uuid4())
     skipped = queue_service.skip(
-        q.id, SkipRequest(trigger_type=TriggerType.SYSTEM)
+        q.id, SkipRequest(trigger_type=TriggerType.SYSTEM), None
     )
     assert skipped.status_name == "skipped"
     assert _logs(session, q.id)[-1].trigger_type == TriggerType.SYSTEM
@@ -188,10 +188,10 @@ def test_skip_system_trigger(queue_service, session, settings_row):
 # ------------------------------ requeue ------------------------------ #
 def test_requeue_creates_new_queue(queue_service, session, settings_row):
     q = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
-    queue_service.call_next(CallNextRequest(admin_id=uuid.uuid4()))
-    queue_service.skip(q.id, SkipRequest(trigger_type=TriggerType.ADMIN))
+    queue_service.call_next(CallNextRequest(), uuid.uuid4())
+    queue_service.skip(q.id, SkipRequest(trigger_type=TriggerType.ADMIN), None)
     admin = uuid.uuid4()
-    new_q = queue_service.requeue(q.id, RequeueRequest(admin_id=admin))
+    new_q = queue_service.requeue(q.id, RequeueRequest(), admin)
 
     assert new_q.id != q.id
     assert new_q.is_requeued is True
@@ -205,14 +205,14 @@ def test_requeue_creates_new_queue(queue_service, session, settings_row):
 def test_requeue_invalid_from_waiting(queue_service, settings_row):
     q = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
     with pytest.raises(InvalidStateTransition):
-        queue_service.requeue(q.id, RequeueRequest(admin_id=uuid.uuid4()))
+        queue_service.requeue(q.id, RequeueRequest(), uuid.uuid4())
 
 
 # ------------------------------ cancel ------------------------------ #
 def test_cancel_waiting(queue_service, session, settings_row):
     cust = uuid.uuid4()
     q = queue_service.create_queue(QueueCreate(customer_id=cust))
-    cancelled = queue_service.cancel(q.id, CancelRequest(customer_id=cust))
+    cancelled = queue_service.cancel(q.id, CancelRequest(), cust)
     assert cancelled.status_name == "cancelled"
     assert cancelled.cancelled_at is not None
     assert _logs(session, q.id)[-1].trigger_type == TriggerType.CUSTOMER
@@ -220,9 +220,9 @@ def test_cancel_waiting(queue_service, session, settings_row):
 
 def test_cancel_invalid_when_called(queue_service, settings_row):
     q = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
-    queue_service.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+    queue_service.call_next(CallNextRequest(), uuid.uuid4())
     with pytest.raises(InvalidStateTransition):
-        queue_service.cancel(q.id, CancelRequest(customer_id=uuid.uuid4()))
+        queue_service.cancel(q.id, CancelRequest(), uuid.uuid4())
 
 
 # ------------------------------ reads ------------------------------ #
@@ -256,7 +256,7 @@ def test_position_notifications_prepare_and_almost(queue_service, session, setti
         queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
         for _ in range(5)
     ]
-    queue_service.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+    queue_service.call_next(CallNextRequest(), uuid.uuid4())
 
     # After calling the front: remaining waiting are queues[1..4] at
     # positions 0,1,2,3 -> 'almost' at pos 1 (queues[2]), 'prepare' at pos 3 (queues[4]).
@@ -269,13 +269,13 @@ def test_position_notifications_dedup(queue_service, session, settings_row):
         queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
         for _ in range(5)
     ]
-    queue_service.call_next(CallNextRequest(admin_id=uuid.uuid4()))
+    queue_service.call_next(CallNextRequest(), uuid.uuid4())
     # Serve the called one -> triggers another emit pass; no duplicate notifs.
     called = queue_service.list(
         queue_date=None, status_id=None, is_checked_in=None, offset=0, limit=50
     )
     called_q = next(x for x in called if x.status_name == "called")
-    queue_service.serve(called_q.id, ServeRequest(admin_id=uuid.uuid4()))
+    queue_service.serve(called_q.id, ServeRequest(), uuid.uuid4())
 
     almost_for_q2 = [
         t for t in _notif_types(session, queues[2].id)

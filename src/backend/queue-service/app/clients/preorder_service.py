@@ -73,6 +73,34 @@ class PreorderServiceClient:
                 exc,
             )
 
+    def get_preorder(
+        self, preorder_id: uuid.UUID
+    ) -> Optional[dict]:
+        """Fetch preorder by ID (no auth required, best-effort).
+
+        Strips the 'queue' field to avoid circular references.
+        """
+        if not self.base_url:
+            return None
+
+        try:
+            response = httpx.get(
+                f"{self.base_url}/preorders/{preorder_id}",
+                timeout=self.timeout,
+            )
+            if response.status_code == 200:
+                data = response.json().get("data", {})
+                data.pop("queue", None)  # avoid circular: preorder.queue -> queue
+                return data
+            return None
+        except httpx.RequestError as exc:
+            logger.warning(
+                "Preorder fetch for %s failed (service unavailable): %s",
+                preorder_id,
+                exc,
+            )
+            return None
+
     def _mint_token(self) -> str:
         now = datetime.now(timezone.utc)
         payload = {

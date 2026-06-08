@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, status
 
-from app.dependencies import QueueStatusServiceDep
+from app.dependencies import AdminDep, QueueStatusServiceDep
 from app.schemas.queue_status import (
     QueueStatusCreate,
     QueueStatusRead,
@@ -28,7 +28,7 @@ def list_statuses(service: QueueStatusServiceDep):
     response_model=APIResponse[QueueStatusRead],
     status_code=status.HTTP_201_CREATED,
 )
-def create_status(payload: QueueStatusCreate, service: QueueStatusServiceDep):
+def create_status(payload: QueueStatusCreate, _: AdminDep, service: QueueStatusServiceDep):
     return ok(_read(service.create(payload)), "Queue status created")
 
 
@@ -41,12 +41,13 @@ def get_status(status_id: uuid.UUID, service: QueueStatusServiceDep):
 def update_status(
     status_id: uuid.UUID,
     payload: QueueStatusUpdate,
+    _: AdminDep,
     service: QueueStatusServiceDep,
 ):
     return ok(_read(service.update(status_id, payload)), "Queue status updated")
 
 
 @router.delete("/{status_id}", response_model=APIResponse[None])
-def delete_status(status_id: uuid.UUID, service: QueueStatusServiceDep):
+def delete_status(status_id: uuid.UUID, _: AdminDep, service: QueueStatusServiceDep):
     service.delete(status_id)
     return ok(None, "Queue status deleted")

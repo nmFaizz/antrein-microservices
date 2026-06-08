@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.logger import get_logger
 from app.core.metrics import PrometheusMiddleware, metrics_endpoint
@@ -33,6 +34,11 @@ def _envelope(status_code: int, message: str) -> JSONResponse:
 @app.exception_handler(QueueServiceError)
 def handle_domain_error(request: Request, exc: QueueServiceError) -> JSONResponse:
     return _envelope(exc.status_code, exc.message)
+
+
+@app.exception_handler(StarletteHTTPException)
+def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    return _envelope(exc.status_code, exc.detail)
 
 
 @app.exception_handler(RequestValidationError)

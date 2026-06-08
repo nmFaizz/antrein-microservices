@@ -1,15 +1,18 @@
 import os
+import uuid
 from typing import Generator
 
 # Must be set before importing app modules: app.lib.config.Settings() reads it
 # at import time. Tests use their own in-memory engine, so the value is a dummy.
 os.environ.setdefault("DATABASE_URL", "sqlite://")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-0123456789abcdef-xyz")
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
+from app.auth.dependencies import get_current_user
 from app.clients.notification_dispatcher import NotificationDispatcher
 from app.clients.preorder_service import PreorderServiceClient
 from app.clients.user_service import UserServiceClient
@@ -97,8 +100,41 @@ def client_fixture(session: Session) -> Generator[TestClient, None, None]:
     def get_session_override():
         return session
 
+    def get_current_user_override():
+        return {"user_id": str(uuid.uuid4()), "role": "admin"}
+
     app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_current_user] = get_current_user_override
     # raise_server_exceptions=False so the generic 500 handler is exercised.
+    with TestClient(app, raise_server_exceptions=False) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(name="customer_client")
+def customer_client_fixture(session: Session) -> Generator[TestClient, None, None]:
+    """TestClient with customer role (non-admin)."""
+    def get_session_override():
+        return session
+
+    def get_current_user_override():
+        return {"user_id": str(uuid.uuid4()), "role": "customer"}
+
+    app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_current_user] = get_current_user_override
+    with TestClient(app, raise_server_exceptions=False) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(name="unauthenticated_client")
+def unauthenticated_client_fixture(session: Session) -> Generator[TestClient, None, None]:
+    """TestClient with session but no auth override (tests must send real JWT)."""
+    def get_session_override():
+        return session
+
+    app.dependency_overrides[get_session] = get_session_override
+    # Do NOT override get_current_user — tests must send real Bearer tokens
     with TestClient(app, raise_server_exceptions=False) as test_client:
         yield test_client
     app.dependency_overrides.clear()

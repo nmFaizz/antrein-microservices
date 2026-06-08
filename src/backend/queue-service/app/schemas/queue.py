@@ -1,6 +1,6 @@
 import uuid
 from datetime import date, datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlmodel import SQLModel
 
@@ -20,30 +20,28 @@ class CheckInRequest(SQLModel):
 
 
 class CallNextRequest(SQLModel):
-    admin_id: uuid.UUID
     queue_date: Optional[date] = None
 
 
 class ServeRequest(SQLModel):
-    admin_id: uuid.UUID
+    pass
 
 
 class SkipRequest(SQLModel):
-    admin_id: Optional[uuid.UUID] = None
     trigger_type: TriggerType = TriggerType.ADMIN
     notes: Optional[str] = None
 
 
 class RequeueRequest(SQLModel):
-    admin_id: uuid.UUID
+    pass
 
 
 class CancelRequest(SQLModel):
-    customer_id: uuid.UUID
+    pass
 
 
 class QueueRead(SQLModel):
-    """Queue representation returned to clients, with computed fields."""
+    """Queue representation returned to clients, with computed fields and optional preorder data."""
 
     id: uuid.UUID
     user_id: uuid.UUID
@@ -76,3 +74,6 @@ class QueueRead(SQLModel):
     # Computed (not stored), see business doc section 6.
     current_position: int
     estimated_wait_minutes: int
+
+    # Enriched from preorder-service; None if unavailable or preorder_id is null.
+    preorder: Optional[Any] = None

@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.dependencies import NotificationRepoDep
+from app.dependencies import AdminDep, NotificationRepoDep
 from app.models.enums import NotificationStatus
 from app.schemas.common import PaginationParams, pagination_params
 from app.schemas.queue_notification import QueueNotificationRead
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/queue-notifications", tags=["queue-notifications"])
 
 @router.get("", response_model=APIResponse[list[QueueNotificationRead]])
 def list_notifications(
+    _: AdminDep,
     notification_repo: NotificationRepoDep,
     pagination: PaginationParams = Depends(pagination_params),
     queue_id: Optional[uuid.UUID] = Query(default=None),

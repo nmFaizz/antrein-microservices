@@ -5,6 +5,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies import (
+    AdminDep,
+    CurrentUserDep,
     NotificationRepoDep,
     QueueServiceDep,
     StatusLogRepoDep,
@@ -39,6 +41,7 @@ def create_queue(payload: QueueCreate, service: QueueServiceDep):
 
 @router.get("", response_model=APIResponse[list[QueueRead]])
 def list_queues(
+    _: AdminDep,
     service: QueueServiceDep,
     pagination: PaginationParams = Depends(pagination_params),
     queue_date: Optional[date] = Query(default=None),
@@ -56,54 +59,59 @@ def list_queues(
 
 
 @router.post("/call-next", response_model=APIResponse[QueueRead])
-def call_next(payload: CallNextRequest, service: QueueServiceDep):
-    queue = service.call_next(payload)
+def call_next(payload: CallNextRequest, current_user: AdminDep, service: QueueServiceDep):
+    admin_id = uuid.UUID(current_user["user_id"])
+    queue = service.call_next(payload, admin_id)
     return ok(queue, "Next queue called")
 
 
 @router.get("/{queue_id}", response_model=APIResponse[QueueRead])
-def get_queue(queue_id: uuid.UUID, service: QueueServiceDep):
+def get_queue(queue_id: uuid.UUID, _: CurrentUserDep, service: QueueServiceDep):
     return ok(service.get(queue_id), "Queue retrieved")
 
 
 @router.post("/{queue_id}/check-in", response_model=APIResponse[QueueRead])
 def check_in(
-    queue_id: uuid.UUID, payload: CheckInRequest, service: QueueServiceDep
+    queue_id: uuid.UUID, payload: CheckInRequest, _: CurrentUserDep, service: QueueServiceDep
 ):
     return ok(service.check_in(queue_id), "Checked in")
 
 
 @router.post("/{queue_id}/serve", response_model=APIResponse[QueueRead])
 def serve(
-    queue_id: uuid.UUID, payload: ServeRequest, service: QueueServiceDep
+    queue_id: uuid.UUID, payload: ServeRequest, current_user: AdminDep, service: QueueServiceDep
 ):
-    return ok(service.serve(queue_id, payload), "Queue served")
+    admin_id = uuid.UUID(current_user["user_id"])
+    return ok(service.serve(queue_id, payload, admin_id), "Queue served")
 
 
 @router.post("/{queue_id}/skip", response_model=APIResponse[QueueRead])
-def skip(queue_id: uuid.UUID, payload: SkipRequest, service: QueueServiceDep):
-    return ok(service.skip(queue_id, payload), "Queue skipped")
+def skip(queue_id: uuid.UUID, payload: SkipRequest, current_user: AdminDep, service: QueueServiceDep):
+    admin_id = uuid.UUID(current_user["user_id"])
+    return ok(service.skip(queue_id, payload, admin_id), "Queue skipped")
 
 
 @router.post("/{queue_id}/requeue", response_model=APIResponse[QueueRead])
 def requeue(
-    queue_id: uuid.UUID, payload: RequeueRequest, service: QueueServiceDep
+    queue_id: uuid.UUID, payload: RequeueRequest, current_user: AdminDep, service: QueueServiceDep
 ):
-    return ok(service.requeue(queue_id, payload), "Queue re-queued")
+    admin_id = uuid.UUID(current_user["user_id"])
+    return ok(service.requeue(queue_id, payload, admin_id), "Queue re-queued")
 
 
 @router.post("/{queue_id}/cancel", response_model=APIResponse[QueueRead])
 def cancel(
-    queue_id: uuid.UUID, payload: CancelRequest, service: QueueServiceDep
+    queue_id: uuid.UUID, payload: CancelRequest, current_user: CurrentUserDep, service: QueueServiceDep
 ):
-    return ok(service.cancel(queue_id, payload), "Queue cancelled")
+    customer_id = uuid.UUID(current_user["user_id"])
+    return ok(service.cancel(queue_id, payload, customer_id), "Queue cancelled")
 
 
 @router.get(
     "/{queue_id}/logs",
     response_model=APIResponse[list[QueueStatusLogRead]],
 )
-def get_queue_logs(queue_id: uuid.UUID, log_repo: StatusLogRepoDep):
+def get_queue_logs(queue_id: uuid.UUID, _: AdminDep, log_repo: StatusLogRepoDep):
     logs = [
         QueueStatusLogRead.model_validate(log, from_attributes=True)
         for log in log_repo.list_by_queue(queue_id)
@@ -116,7 +124,7 @@ def get_queue_logs(queue_id: uuid.UUID, log_repo: StatusLogRepoDep):
     response_model=APIResponse[list[QueueNotificationRead]],
 )
 def get_queue_notifications(
-    queue_id: uuid.UUID, notification_repo: NotificationRepoDep
+    queue_id: uuid.UUID, _: CurrentUserDep, notification_repo: NotificationRepoDep
 ):
     notifications = [
         QueueNotificationRead.model_validate(n, from_attributes=True)
