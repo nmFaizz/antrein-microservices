@@ -37,6 +37,7 @@ from app.schemas.queue import (
     ServeRequest,
     SkipRequest,
 )
+from app.clients.preorder_service import PreorderServiceClient
 from app.services.notification_service import NotificationService
 from app.services.status_resolver import StatusResolver
 
@@ -53,6 +54,7 @@ class QueueService:
         notification_repo: QueueNotificationRepository,
         resolver: StatusResolver,
         notification_service: NotificationService,
+        preorder_client: PreorderServiceClient,
     ) -> None:
         self.session = session
         self.queue_repo = queue_repo
@@ -61,6 +63,7 @@ class QueueService:
         self.notification_repo = notification_repo
         self.resolver = resolver
         self.notification_service = notification_service
+        self.preorder_client = preorder_client
 
     def create_queue(self, data: QueueCreate) -> QueueRead:
         settings = self._require_settings()
@@ -132,7 +135,9 @@ class QueueService:
         )
         self._emit_position_notifications(queue_date)
         self.session.commit()
-        return self._to_read(queue)
+        read = self._to_read(queue)
+        self._sync_preorder(queue, read)
+        return read
 
     def skip(self, queue_id: uuid.UUID, data: SkipRequest) -> QueueRead:
         queue = self._get_or_404(queue_id)
@@ -152,7 +157,9 @@ class QueueService:
         )
         self._emit_position_notifications(queue.queue_date)
         self.session.commit()
-        return self._to_read(queue)
+        read = self._to_read(queue)
+        self._sync_preorder(queue, read)
+        return read
 
     def serve(self, queue_id: uuid.UUID, data: ServeRequest) -> QueueRead:
         queue = self._get_or_404(queue_id)
@@ -169,7 +176,9 @@ class QueueService:
         self._recompute_avg_serve_time(queue.queue_date)
         self._emit_position_notifications(queue.queue_date)
         self.session.commit()
-        return self._to_read(queue)
+        read = self._to_read(queue)
+        self._sync_preorder(queue, read, preorder_status="confirmed")
+        return read
 
     def requeue(self, queue_id: uuid.UUID, data: RequeueRequest) -> QueueRead:
         source = self._get_or_404(queue_id)
@@ -211,7 +220,9 @@ class QueueService:
             new_queue, NotificationType.REQUEUED
         )
         self.session.commit()
-        return self._to_read(new_queue)
+        read = self._to_read(new_queue)
+        self._sync_preorder(new_queue, read)
+        return read
 
     def cancel(self, queue_id: uuid.UUID, data: CancelRequest) -> QueueRead:
         queue = self._get_or_404(queue_id)
@@ -227,7 +238,9 @@ class QueueService:
         )
         self._emit_position_notifications(queue.queue_date)
         self.session.commit()
-        return self._to_read(queue)
+        read = self._to_read(queue)
+        self._sync_preorder(queue, read, preorder_status="cancelled")
+        return read
 
     # ------------------------------------------------------------------ #
     # Reads
@@ -335,6 +348,25 @@ class QueueService:
         settings = self._require_settings()
         settings.avg_serve_time_mins = max(1, round(mean(durations)))
         self.settings_repo.add(settings)
+
+    def _sync_preorder(
+        self, queue: Queue, read: QueueRead, preorder_status: Optional[str] = None
+    ) -> None:
+        """Best-effort push of the queue snapshot/status to the preorder."""
+        if queue.preorder_id is None:
+            return
+        snapshot = {
+            "id": str(read.id),
+            "queue_number": read.queue_number,
+            "position": read.current_position,
+            "estimated_time": (
+                read.estimated_time.isoformat()
+                if read.estimated_time is not None
+                else None
+            ),
+            "status": read.status_name,
+        }
+        self.preorder_client.sync(queue.preorder_id, snapshot, preorder_status)
 
     def _to_read(self, queue: Queue) -> QueueRead:
         waiting_id = self.resolver.id_for(DefaultStatus.WAITING)
