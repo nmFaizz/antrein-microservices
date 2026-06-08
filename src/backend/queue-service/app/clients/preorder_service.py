@@ -104,7 +104,7 @@ class PreorderServiceClient:
     def _mint_token(self) -> str:
         now = datetime.now(timezone.utc)
         payload = {
-            "user_id": self.service_account_id,
+            "sub": self.service_account_id,
             "role": "admin",
             "iat": now,
             "exp": now + timedelta(seconds=self.token_ttl_seconds),

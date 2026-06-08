@@ -86,6 +86,7 @@ services:
       ENV: "development"
       SERVICE_VERSION: "1.0.0"
       SECRET_KEY: ${JWT_SECRET_KEY}
+      PREORDER_SERVICE_URL: http://menu-preorder-service:8000
       # OTEL_EXPORTER_OTLP_ENDPOINT / LOKI_URL use code defaults (jaeger:4318, loki:3100)
     depends_on:
       queue-service-db:

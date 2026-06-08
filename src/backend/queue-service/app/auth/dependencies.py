@@ -17,7 +17,7 @@ def get_current_user(
             settings.SECRET_KEY,
             algorithms=["HS256"]
         )
-        user_id: str = payload.get("user_id")
+        user_id: str = payload.get("sub")
         role: str = payload.get("role")
 
         if not user_id:

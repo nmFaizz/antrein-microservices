@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button-link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { ChevronRightIcon, CloseIcon, ReceiptIcon } from "@/components/ui/icons";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Muted } from "@/components/ui/typography";
 import { formatRupiah, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useAllPreorders, useUpdatePreorder } from "@/features/preorder/queries";
+import { useAllPreorders } from "@/features/preorder/queries";
 import type { Preorder, PreorderStatus } from "@/features/preorder/types";
 
 const statusVariant: Record<PreorderStatus, BadgeVariant> = {
@@ -45,7 +46,6 @@ export default function AdminPreordersPage() {
   const [selected, setSelected] = useState<Preorder | null>(null);
 
   const { data: orders = [], isLoading, isError } = useAllPreorders();
-  const updatePreorder = useUpdatePreorder();
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
@@ -60,17 +60,22 @@ export default function AdminPreordersPage() {
 
   const pendingCount = orders.filter((o) => o.status === "pending").length;
 
-  async function updateStatus(id: string, newStatus: PreorderStatus) {
-    await updatePreorder.mutateAsync({ id, data: { status: newStatus } });
-    if (selected?.id === id) setSelected((prev) => prev ? { ...prev, status: newStatus } : null);
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Daftar Pesanan"
-        subtitle={`${orders.length} total · ${pendingCount} menunggu konfirmasi`}
+        subtitle={`${orders.length} total · ${pendingCount} menunggu`}
       />
+
+      {/* Info banner: confirm via queue flow */}
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+        <span className="text-muted-foreground">
+          Konfirmasi pesanan dilakukan otomatis ketika antrian selesai dilayani.
+        </span>
+        <ButtonLink href="/admin/queues" variant="outline" className="shrink-0">
+          Kelola Antrian
+        </ButtonLink>
+      </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput
@@ -154,7 +159,7 @@ export default function AdminPreordersPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-border bg-muted">
                 <tr>
-                  {["Antrian", "ID", "Pelanggan", "Item", "Total", "Status", "Waktu", "Aksi"].map((h) => (
+                  {["Antrian", "ID", "Pelanggan", "Item", "Total", "Status", "Waktu"].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left font-medium">{h}</th>
                   ))}
                 </tr>
@@ -162,13 +167,17 @@ export default function AdminPreordersPage() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center">
+                    <td colSpan={7} className="px-4 py-10 text-center">
                       <Muted>Tidak ada pesanan.</Muted>
                     </td>
                   </tr>
                 ) : (
                   filtered.map((order) => (
-                    <tr key={order.id} className="border-b border-border last:border-0">
+                    <tr
+                      key={order.id}
+                      className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/50"
+                      onClick={() => setSelected(order)}
+                    >
                       <td className="px-4 py-2.5 text-center">
                         {order.queue?.queue_number != null ? (
                           <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
@@ -196,39 +205,6 @@ export default function AdminPreordersPage() {
                       <td className="px-4 py-2.5 text-muted-foreground">
                         {formatTime(order.created_at)}
                       </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex gap-1">
-                          {order.status === "pending" && (
-                            <>
-                              <Button
-                                size="sm"
-                                disabled={updatePreorder.isPending}
-                                onClick={() => updateStatus(order.id, "confirmed")}
-                              >
-                                Konfirmasi
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                disabled={updatePreorder.isPending}
-                                onClick={() => updateStatus(order.id, "cancelled")}
-                              >
-                                Batalkan
-                              </Button>
-                            </>
-                          )}
-                          {order.status === "confirmed" && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              disabled={updatePreorder.isPending}
-                              onClick={() => updateStatus(order.id, "cancelled")}
-                            >
-                              Batalkan
-                            </Button>
-                          )}
-                        </div>
-                      </td>
                     </tr>
                   ))
                 )}
@@ -238,44 +214,13 @@ export default function AdminPreordersPage() {
         </>
       )}
 
-      {/* ── Detail modal ── */}
+      {/* ── Detail modal (read-only) ── */}
       <Modal
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected ? `#${selected.id.slice(0, 8)}` : ""}
         description={selected ? displayName(selected) : undefined}
-        footer={
-          selected?.status === "pending" ? (
-            <>
-              <Button
-                variant="destructive"
-                disabled={updatePreorder.isPending}
-                onClick={() => { updateStatus(selected.id, "cancelled"); setSelected(null); }}
-              >
-                Batalkan Pesanan
-              </Button>
-              <Button
-                disabled={updatePreorder.isPending}
-                onClick={() => { updateStatus(selected.id, "confirmed"); setSelected(null); }}
-              >
-                Konfirmasi Pesanan
-              </Button>
-            </>
-          ) : selected?.status === "confirmed" ? (
-            <>
-              <Button variant="ghost" onClick={() => setSelected(null)}>Tutup</Button>
-              <Button
-                variant="destructive"
-                disabled={updatePreorder.isPending}
-                onClick={() => { updateStatus(selected.id, "cancelled"); setSelected(null); }}
-              >
-                Batalkan Pesanan
-              </Button>
-            </>
-          ) : (
-            <Button variant="ghost" onClick={() => setSelected(null)}>Tutup</Button>
-          )
-        }
+        footer={<Button variant="ghost" onClick={() => setSelected(null)}>Tutup</Button>}
       >
         {selected && (
           <div className="flex flex-col gap-4">
@@ -297,6 +242,16 @@ export default function AdminPreordersPage() {
                 </span>
               )}
             </div>
+
+            {selected.status === "pending" && (
+              <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+                Untuk mengkonfirmasi, pergi ke{" "}
+                <a href="/admin/queues" className="font-medium text-primary underline underline-offset-2">
+                  Manajemen Antrian
+                </a>
+                {" "}dan klik <strong>Selesai</strong> pada antrian yang sudah dipanggil.
+              </div>
+            )}
 
             <div className="flex flex-col gap-2">
               <span className="text-xs font-medium text-muted-foreground">Status</span>
