@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useCurrentUser } from "@/features/auth/hooks";
 import { clearToken } from "@/lib/auth";
 
@@ -11,10 +13,12 @@ import { LogOutIcon, UserIcon } from "./icons";
 /** Customer top brand bar (mobile-friendly). */
 export function CustomerHeader() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
 
   function handleLogout() {
     clearToken();
+    queryClient.clear();
     router.push("/login");
   }
 

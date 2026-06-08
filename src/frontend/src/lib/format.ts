@@ -33,3 +33,17 @@ export function formatTime(value: string | Date): string {
 export function formatDateTime(value: string | Date): string {
   return `${formatDate(value)}, ${formatTime(value)}`;
 }
+
+/**
+ * Converts an absolute estimated-time ISO string (from the queue service)
+ * into a human-readable remaining-time label.
+ * e.g. "~5 menit" | "~1 jam 10 menit" | "Segera"
+ */
+export function formatEstimatedTime(value: string): string {
+  const diffMin = Math.round((new Date(value).getTime() - Date.now()) / 60_000);
+  if (diffMin <= 0) return "Segera";
+  if (diffMin < 60) return `~${diffMin} menit`;
+  const h = Math.floor(diffMin / 60);
+  const m = diffMin % 60;
+  return m > 0 ? `~${h} jam ${m} menit` : `~${h} jam`;
+}
