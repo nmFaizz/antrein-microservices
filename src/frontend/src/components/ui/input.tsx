@@ -19,17 +19,19 @@ interface InputProps
  * @example
  * <Input name="email" label="Email" type="email" />
  */
-export function Input({ name, label, className, ...props }: InputProps) {
+export function Input({ name, label, type, className, ...props }: InputProps) {
   const { register } = useFormContext();
   const error = useFieldError(name);
+  const isNum = type === "number";
 
   return (
     <Field name={name} label={label}>
       <input
         id={name}
+        type={type}
         aria-invalid={!!error}
         className={cn(controlClassName, "h-10", className)}
-        {...register(name)}
+        {...register(name, { valueAsNumber: isNum })}
         {...props}
       />
     </Field>
