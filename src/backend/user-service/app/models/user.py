@@ -1,7 +1,10 @@
 import uuid
-
+import enum
 from sqlmodel import Field, SQLModel
 
+class UserRole(str, enum.Enum):
+    ADMIN = 'admin'
+    USER = 'user'
 
 class User(SQLModel, table=True):
     """A customer model."""
@@ -12,3 +15,4 @@ class User(SQLModel, table=True):
 
     username: str = Field(index=True)
     password: str
+    role: UserRole = Field(default='user')

@@ -21,5 +21,5 @@ def register(payload: UserRegister, service: UserServiceDep):
 @router.post("/login", response_model=APIResponse[Token])
 def login(payload: UserLogin, service: UserServiceDep):
     user = service.authenticate(payload)
-    token = create_access_token(str(user.id))
+    token = create_access_token(str(user.id), role=user.role.value)
     return ok(Token(access_token=token), "Login successful")

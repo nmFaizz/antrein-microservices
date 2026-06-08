@@ -2,6 +2,8 @@ import uuid
 
 from sqlmodel import SQLModel
 
+from app.models.user import UserRole
+
 
 class UserRegister(SQLModel):
     username: str
@@ -15,6 +17,7 @@ class UserLogin(UserRegister):
 class UserRead(SQLModel):
     id: uuid.UUID
     username: str
+    role: UserRole
 
 
 class Token(SQLModel):
