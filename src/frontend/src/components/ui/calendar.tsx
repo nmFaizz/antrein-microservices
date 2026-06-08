@@ -14,9 +14,10 @@ export function Calendar({ className, classNames, ...props }: DayPickerProps) {
     <DayPicker
       className={cn("p-3", className)}
       classNames={{
-        today: "font-bold text-foreground",
+        today: "font-bold text-primary",
         selected:
-          "bg-foreground text-background rounded-md hover:bg-foreground",
+          "bg-primary text-primary-foreground rounded-md hover:bg-primary",
+        day: "rounded-md hover:bg-accent",
         chevron: "fill-current",
         ...classNames,
       }}

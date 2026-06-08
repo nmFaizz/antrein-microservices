@@ -35,19 +35,13 @@ export function P({ className, ...props }: ParagraphProps) {
 
 export function Lead({ className, ...props }: ParagraphProps) {
   return (
-    <p
-      className={cn("text-lg text-black/70 dark:text-white/70", className)}
-      {...props}
-    />
+    <p className={cn("text-lg text-muted-foreground", className)} {...props} />
   );
 }
 
 export function Muted({ className, ...props }: ParagraphProps) {
   return (
-    <p
-      className={cn("text-sm text-black/50 dark:text-white/50", className)}
-      {...props}
-    />
+    <p className={cn("text-sm text-muted-foreground", className)} {...props} />
   );
 }
 

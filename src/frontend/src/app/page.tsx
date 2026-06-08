@@ -51,7 +51,7 @@ export default function Home() {
         <H2>Users (TanStack Query + Table)</H2>
         {isLoading && <P>Loading…</P>}
         {isError && (
-          <p className="text-sm text-red-500">
+          <p className="text-sm text-destructive">
             {error instanceof Error ? error.message : "Failed to load users"}
           </p>
         )}

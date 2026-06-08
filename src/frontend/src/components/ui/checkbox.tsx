@@ -23,10 +23,7 @@ export function Checkbox({ name, label, className, ...props }: CheckboxProps) {
         id={name}
         type="checkbox"
         aria-invalid={!!error}
-        className={cn(
-          "size-4 rounded border-black/30 accent-foreground dark:border-white/30",
-          className,
-        )}
+        className={cn("size-4 rounded border-input accent-primary", className)}
         {...register(name)}
         {...props}
       />

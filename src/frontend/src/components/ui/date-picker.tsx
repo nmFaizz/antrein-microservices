@@ -61,13 +61,11 @@ export function DatePicker<TValues extends FieldValues>({
           {selected ? (
             selected.toLocaleDateString()
           ) : (
-            <span className="text-black/40 dark:text-white/40">
-              {placeholder}
-            </span>
+            <span className="text-muted-foreground">{placeholder}</span>
           )}
         </button>
         {open && (
-          <div className="absolute z-10 mt-1 rounded-md border border-black/10 bg-background shadow-lg dark:border-white/15">
+          <div className="absolute z-10 mt-1 rounded-md border border-border bg-popover shadow-lg">
             <Calendar
               mode="single"
               selected={selected}

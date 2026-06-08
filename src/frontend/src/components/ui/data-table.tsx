@@ -30,9 +30,9 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="overflow-x-auto rounded-md border border-black/10 dark:border-white/15">
+    <div className="overflow-x-auto rounded-md border border-border">
       <table className="w-full text-sm">
-        <thead className="border-b border-black/10 bg-black/[0.03] dark:border-white/15 dark:bg-white/[0.03]">
+        <thead className="border-b border-border bg-muted">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -54,10 +54,7 @@ export function DataTable<TData, TValue>({
         <tbody>
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b border-black/5 last:border-0 dark:border-white/10"
-              >
+              <tr key={row.id} className="border-b border-border last:border-0">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="px-4 py-2.5">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -69,7 +66,7 @@ export function DataTable<TData, TValue>({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-4 py-8 text-center text-black/50 dark:text-white/50"
+                className="px-4 py-8 text-center text-muted-foreground"
               >
                 {emptyMessage}
               </td>

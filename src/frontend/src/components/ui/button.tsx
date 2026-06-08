@@ -11,13 +11,12 @@ export type ButtonVariant =
 export type ButtonSize = "sm" | "md" | "lg";
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-foreground text-background hover:opacity-90",
-  secondary:
-    "bg-black/10 text-foreground hover:bg-black/15 dark:bg-white/10 dark:hover:bg-white/15",
-  outline:
-    "border border-black/20 hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10",
-  ghost: "hover:bg-black/5 dark:hover:bg-white/10",
-  destructive: "bg-red-600 text-white hover:bg-red-700",
+  primary: "bg-primary text-primary-foreground hover:bg-primary-500",
+  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+  outline: "border border-input bg-background hover:bg-accent",
+  ghost: "hover:bg-accent",
+  destructive:
+    "bg-destructive text-destructive-foreground hover:bg-destructive/90",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

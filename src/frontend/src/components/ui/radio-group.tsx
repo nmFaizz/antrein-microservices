@@ -45,7 +45,7 @@ export function RadioGroup({
                 id={id}
                 type="radio"
                 value={option.value}
-                className="size-4 accent-foreground"
+                className="size-4 accent-primary"
                 {...register(name)}
               />
               {option.label}

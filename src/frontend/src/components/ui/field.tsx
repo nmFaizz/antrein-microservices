@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 /** Base styling shared by text-like controls (input, textarea, select). */
 export const controlClassName =
-  "w-full rounded-md border border-black/15 bg-transparent px-3 text-sm outline-none transition focus:border-black/40 dark:border-white/20 dark:focus:border-white/50 aria-[invalid=true]:border-red-500";
+  "w-full rounded-md border border-input bg-background px-3 text-sm outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30 aria-[invalid=true]:border-destructive";
 
 /** Read a (possibly nested, e.g. "address.city") field error from form state. */
 export function useFieldError(name: string): RHFFieldError | undefined {
@@ -36,7 +36,7 @@ export function Label({
 
 export function FieldError({ error }: { error?: RHFFieldError }) {
   if (!error?.message) return null;
-  return <p className="text-xs text-red-500">{String(error.message)}</p>;
+  return <p className="text-xs text-destructive">{String(error.message)}</p>;
 }
 
 interface FieldProps {
