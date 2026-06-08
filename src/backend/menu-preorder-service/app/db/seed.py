@@ -2,7 +2,7 @@ import uuid
 from sqlmodel import Session, SQLModel, select
 from app.db.database import engine
 from app.menu.models import Menu, MenuCategory
-from app.order.models import Order, OrderItem
+from app.preorder.models import Preorder, PreorderItem
 
 # ==========================================
 # DATA DUMMY MENU
@@ -71,38 +71,37 @@ def seed_db():
             session.refresh(menu_item)
         print(f"Berhasil menambahkan {len(db_menus)} menu.")
 
-        # 2. Buat data Order dummy untuk keperluan testing
-        print("Memasukkan data order dummy...")
+        # 2. Buat data Preorder dummy untuk keperluan testing
+        print("Memasukkan data preorder dummy...")
         user_uuid = uuid.uuid4()
         
-        # Instansiasi Order Induk
-        dummy_order = Order(
+        # Instansiasi Preorder Induk
+        dummy_preorder = Preorder(
             user_id=user_uuid,
             total_price=0.0,  # Akan dihitung di bawah
             status="pending",
-            notes="Es teh manisnya satu jangan terlalu manis.",
-            queue_number=1
+            notes="Es teh manisnya satu jangan terlalu manis."
         )
         
-        # Instansiasi Detail Item Pesanan (OrderItem)
-        item_1 = OrderItem(
+        # Instansiasi Detail Item Pesanan (PreorderItem)
+        item_1 = PreorderItem(
             menu_item_id=db_menus[0].id,  # Nasi Goreng Spesial
             quantity=1,
             subtotal=db_menus[0].price
         )
-        item_2 = OrderItem(
+        item_2 = PreorderItem(
             menu_item_id=db_menus[3].id,  # Es Teh Manis
             quantity=2,
             subtotal=db_menus[3].price * 2
         )
         
-        # Gabungkan item ke order induk
-        dummy_order.items = [item_1, item_2]
-        dummy_order.total_price = item_1.subtotal + item_2.subtotal
+        # Gabungkan item ke preorder induk
+        dummy_preorder.items = [item_1, item_2]
+        dummy_preorder.total_price = item_1.subtotal + item_2.subtotal
         
-        session.add(dummy_order)
+        session.add(dummy_preorder)
         session.commit()
-        print("Berhasil menambahkan data order dummy.")
+        print("Berhasil menambahkan data preorder dummy.")
         print("=========================")
         print("Proses Seeding Selesai!")
 

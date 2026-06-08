@@ -5,7 +5,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.db.config import settings
 from app.menu.router import router as menu_router
-from app.order.router import router as order_router
+from app.preorder.router import router as preorder_router
 from app.core.response import APIResponse, ok, fail
 
 app = FastAPI(
@@ -40,8 +40,8 @@ async def validation_exception_handler(request, exc: RequestValidationError):
         content=fail(message=combined_message, data=errors).model_dump()
     )
 
-app.include_router(menu_router, prefix=settings.API_V1_STR)
-app.include_router(order_router, prefix=settings.API_V1_STR)
+app.include_router(menu_router)
+app.include_router(preorder_router)
 
 @app.get("/health", response_model=APIResponse[dict], tags=["Health"])
 def health_check():
