@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-
+import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DataTable } from "@/components/ui/data-table";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
 import { Muted } from "@/components/ui/typography";
 import { getQueueColumns } from "@/features/queue/columns";
 import {
@@ -25,7 +24,7 @@ import {
   useServeQueue,
   useSkipQueue,
 } from "@/features/queue/queries";
-import { type Queue, QUEUE_STATUSES } from "@/features/queue/types";
+import { QUEUE_STATUSES, type Queue } from "@/features/queue/types";
 
 const PAGE_SIZE = 6;
 

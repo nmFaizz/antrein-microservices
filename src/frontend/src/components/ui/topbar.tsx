@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 import { useCurrentUser } from "@/features/auth/hooks";
 import { clearToken } from "@/lib/auth";
@@ -45,9 +44,7 @@ export function Topbar() {
             <UserIcon className="size-5" />
           </span>
           <div className="hidden flex-col leading-tight sm:flex">
-            <span className="text-sm font-medium">
-              {user?.username ?? "—"}
-            </span>
+            <span className="text-sm font-medium">{user?.username ?? "—"}</span>
             <span className="text-xs text-muted-foreground">Admin</span>
           </div>
         </div>

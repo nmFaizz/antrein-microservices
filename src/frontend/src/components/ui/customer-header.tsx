@@ -1,9 +1,8 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-import { useQueryClient } from "@tanstack/react-query";
 
 import { useCurrentUser } from "@/features/auth/hooks";
 import { clearToken } from "@/lib/auth";

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-
-import { cn } from "@/lib/utils";
 import { H2 } from "@/components/ui/typography";
+import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
   title: string;

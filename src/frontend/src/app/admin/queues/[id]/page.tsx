@@ -5,26 +5,18 @@ import { useParams } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button-link";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { BellIcon, ChevronLeftIcon, UserIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/ui/tabs";
 import {
-  mockNotifications,
-  mockQueues,
-  mockSettings,
-  mockStatusLogs,
-} from "@/features/queue/mock";
-import {
-  formatQueueNumber,
-  type QueueStatusLog,
-} from "@/features/queue/types";
+  useQueue,
+  useQueueLogs,
+  useQueueNotifications,
+} from "@/features/queue/queries";
+import { formatQueueNumber } from "@/features/queue/types";
+import { useSettings } from "@/features/queue-settings/queries";
 import { formatDateTime, formatTime } from "@/lib/format";
 
 const triggerBadge: Record<string, "info" | "warning" | "muted"> = {
@@ -33,63 +25,21 @@ const triggerBadge: Record<string, "info" | "warning" | "muted"> = {
   system: "muted",
 };
 
-/** Build a timeline from explicit logs, or derive one from the queue's timestamps. */
-function buildTimeline(queueId: string): QueueStatusLog[] {
-  const explicit = mockStatusLogs.filter((l) => l.queue_id === queueId);
-  if (explicit.length) return explicit;
-  const queue = mockQueues.find((q) => q.id === queueId);
-  if (!queue) return [];
-  const logs: QueueStatusLog[] = [
-    {
-      id: `${queueId}-created`,
-      queue_id: queueId,
-      previous_status: null,
-      new_status: "waiting",
-      triggered_by: null,
-      trigger_type: "system",
-      notes: "Antrian dibuat",
-      created_at: queue.created_at,
-    },
-  ];
-  if (queue.called_at)
-    logs.push({
-      id: `${queueId}-called`,
-      queue_id: queueId,
-      previous_status: "waiting",
-      new_status: "called",
-      triggered_by: queue.called_by,
-      trigger_type: "admin",
-      notes: null,
-      created_at: queue.called_at,
-    });
-  if (queue.served_at)
-    logs.push({
-      id: `${queueId}-served`,
-      queue_id: queueId,
-      previous_status: "called",
-      new_status: "served",
-      triggered_by: queue.served_by,
-      trigger_type: "admin",
-      notes: null,
-      created_at: queue.served_at,
-    });
-  if (queue.cancelled_at)
-    logs.push({
-      id: `${queueId}-cancelled`,
-      queue_id: queueId,
-      previous_status: "waiting",
-      new_status: "cancelled",
-      triggered_by: queue.user_id,
-      trigger_type: "customer",
-      notes: null,
-      created_at: queue.cancelled_at,
-    });
-  return logs;
-}
-
 export default function QueueDetailPage() {
   const params = useParams<{ id: string }>();
-  const queue = mockQueues.find((q) => q.id === params.id);
+  const queueQuery = useQueue(params.id);
+  const logsQuery = useQueueLogs(params.id);
+  const notificationsQuery = useQueueNotifications(params.id);
+  const settingsQuery = useSettings();
+
+  const queue = queueQuery.data;
+  const logs = logsQuery.data ?? [];
+  const notifications = notificationsQuery.data ?? [];
+  const prefix = settingsQuery.data?.prefix ?? "";
+
+  if (queueQuery.isLoading) {
+    return <p className="text-sm text-muted-foreground">Memuat antrian…</p>;
+  }
 
   if (!queue) {
     return (
@@ -100,11 +50,6 @@ export default function QueueDetailPage() {
       />
     );
   }
-
-  const logs = buildTimeline(queue.id);
-  const notifications = mockNotifications.filter(
-    (n) => n.queue_id === queue.id,
-  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,19 +64,18 @@ export default function QueueDetailPage() {
         <Card className="lg:col-span-1">
           <CardContent className="flex flex-col items-center gap-3 text-center">
             <span className="text-5xl font-bold tracking-tight text-primary-600">
-              {formatQueueNumber(mockSettings.prefix, queue.queue_number)}
+              {formatQueueNumber(prefix, queue.queue_number)}
             </span>
             <StatusBadge name={queue.status_name} />
-            {queue.is_requeued && (
-              <Badge variant="default">Re-queue</Badge>
-            )}
+            {queue.is_requeued && <Badge variant="default">Re-queue</Badge>}
             <div className="mt-2 flex w-full items-center gap-3 rounded-md bg-muted p-3 text-left">
               <span className="flex size-9 items-center justify-center rounded-full bg-card text-muted-foreground">
                 <UserIcon className="size-5" />
               </span>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">
-                  {queue.customer_name}
+                  {queue.customer_name ??
+                    `Pelanggan ${queue.user_id.slice(0, 8)}`}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {queue.is_checked_in ? "Sudah check-in" : "Belum check-in"}
@@ -179,7 +123,11 @@ export default function QueueDetailPage() {
             />
             <Info
               label="Pre-order"
-              value={queue.preorder_id ? `#${queue.preorder_id}` : "Tanpa pre-order"}
+              value={
+                queue.preorder_id
+                  ? `#${queue.preorder_id.slice(0, 8)}`
+                  : "Tanpa pre-order"
+              }
             />
             <Info label="Dibuat" value={formatDateTime(queue.created_at)} />
           </CardContent>

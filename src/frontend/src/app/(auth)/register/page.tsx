@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { register } from "@/features/auth/api";
-import { registerSchema, type RegisterValues } from "@/features/auth/types";
+import { type RegisterValues, registerSchema } from "@/features/auth/types";
 
 export default function RegisterPage() {
   const router = useRouter();

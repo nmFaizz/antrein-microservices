@@ -10,17 +10,38 @@ import {
   TagIcon,
 } from "./icons";
 import { type NavItem, SidebarNav } from "./sidebar-nav";
-import { mockPreorders } from "@/features/preorder/mock";
-
-const pendingCount = mockPreorders.filter((p) => p.status === "pending").length;
 
 const adminNav: NavItem[] = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: <DashboardIcon className="size-5" /> },
-  { href: "/admin/queues", label: "Antrian", icon: <QueueIcon className="size-5" /> },
-  { href: "/admin/preorders", label: "Pre-order", icon: <ReceiptIcon className="size-5" />, badge: pendingCount },
-  { href: "/admin/menu", label: "Menu", icon: <MenuBookIcon className="size-5" /> },
-  { href: "/admin/statuses", label: "Status Antrian", icon: <TagIcon className="size-5" /> },
-  { href: "/admin/settings", label: "Pengaturan", icon: <SettingsIcon className="size-5" /> },
+  {
+    href: "/admin/dashboard",
+    label: "Dashboard",
+    icon: <DashboardIcon className="size-5" />,
+  },
+  {
+    href: "/admin/queues",
+    label: "Antrian",
+    icon: <QueueIcon className="size-5" />,
+  },
+  {
+    href: "/admin/preorders",
+    label: "Pre-order",
+    icon: <ReceiptIcon className="size-5" />,
+  },
+  {
+    href: "/admin/menu",
+    label: "Menu",
+    icon: <MenuBookIcon className="size-5" />,
+  },
+  {
+    href: "/admin/statuses",
+    label: "Status Antrian",
+    icon: <TagIcon className="size-5" />,
+  },
+  {
+    href: "/admin/settings",
+    label: "Pengaturan",
+    icon: <SettingsIcon className="size-5" />,
+  },
 ];
 
 /** Admin sidebar shell: brand + primary navigation. */

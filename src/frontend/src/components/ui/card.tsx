@@ -25,7 +25,10 @@ export function CardTitle({
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn("text-base font-semibold leading-tight", className)} {...props} />
+    <h3
+      className={cn("text-base font-semibold leading-tight", className)}
+      {...props}
+    />
   );
 }
 
@@ -44,6 +47,9 @@ export function CardContent({ className, ...props }: DivProps) {
 
 export function CardFooter({ className, ...props }: DivProps) {
   return (
-    <div className={cn("flex items-center gap-2 p-5 pt-0", className)} {...props} />
+    <div
+      className={cn("flex items-center gap-2 p-5 pt-0", className)}
+      {...props}
+    />
   );
 }

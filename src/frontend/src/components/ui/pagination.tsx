@@ -1,8 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
 interface PaginationProps {
   page: number;

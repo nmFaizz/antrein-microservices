@@ -1,13 +1,8 @@
 "use client";
 
 import Link from "next/link";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { ButtonLink } from "@/components/ui/button-link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   ClockIcon,
@@ -15,17 +10,21 @@ import {
   TicketIcon,
   UserIcon,
 } from "@/components/ui/icons";
-import { ButtonLink } from "@/components/ui/button-link";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { mockQueues, mockSettings } from "@/features/queue/mock";
+import { useQueues } from "@/features/queue/queries";
 import { formatQueueNumber } from "@/features/queue/types";
+import { useSettings } from "@/features/queue-settings/queries";
 import { formatTime } from "@/lib/format";
 
 export default function DashboardPage() {
-  const queues = mockQueues;
-  const prefix = mockSettings.prefix;
+  const settingsQuery = useSettings();
+  const queuesQuery = useQueues();
+
+  const queues = queuesQuery.data ?? [];
+  const prefix = settingsQuery.data?.prefix ?? "";
+  const notConfigured = settingsQuery.isError;
 
   const count = (name: string) =>
     queues.filter((q) => q.status_name === name).length;
@@ -43,6 +42,18 @@ export default function DashboardPage() {
         subtitle={`Ringkasan antrian hari ini · ${queues.length} total antrian`}
         actions={<ButtonLink href="/admin/queues">Kelola Antrian</ButtonLink>}
       />
+
+      {notConfigured && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-accent px-4 py-3 text-sm">
+          <span>
+            Antrian belum dikonfigurasi. Atur pengaturan antrian agar pelanggan
+            bisa mengambil nomor.
+          </span>
+          <ButtonLink href="/admin/settings" size="sm">
+            Atur Sekarang
+          </ButtonLink>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard

@@ -1,8 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-
 import { SearchIcon } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
 interface SearchInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {

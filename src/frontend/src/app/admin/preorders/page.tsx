@@ -3,37 +3,41 @@
 import { useMemo, useState } from "react";
 
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterSelect } from "@/components/ui/filter-select";
-import { ChevronRightIcon, CloseIcon, ReceiptIcon } from "@/components/ui/icons";
+import {
+  ChevronRightIcon,
+  CloseIcon,
+  ReceiptIcon,
+} from "@/components/ui/icons";
 import { Modal } from "@/components/ui/modal";
 import { PageHeader } from "@/components/ui/page-header";
 import { SearchInput } from "@/components/ui/search-input";
-import { Button } from "@/components/ui/button";
 import { Muted } from "@/components/ui/typography";
-import { formatRupiah, formatTime } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { useAllPreorders } from "@/features/preorder/queries";
 import type { Preorder, PreorderStatus } from "@/features/preorder/types";
+import { formatRupiah, formatTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const statusVariant: Record<PreorderStatus, BadgeVariant> = {
-  pending:   "warning",
+  pending: "warning",
   confirmed: "success",
   cancelled: "danger",
 };
 
 const statusLabel: Record<PreorderStatus, string> = {
-  pending:   "Menunggu",
+  pending: "Menunggu",
   confirmed: "Dikonfirmasi",
   cancelled: "Dibatalkan",
 };
 
 const filterOptions = [
-  { label: "Semua",        value: ""          },
-  { label: "Menunggu",     value: "pending"   },
+  { label: "Semua", value: "" },
+  { label: "Menunggu", value: "pending" },
   { label: "Dikonfirmasi", value: "confirmed" },
-  { label: "Dibatalkan",   value: "cancelled" },
+  { label: "Dibatalkan", value: "cancelled" },
 ];
 
 function displayName(order: Preorder): string {
@@ -41,8 +45,8 @@ function displayName(order: Preorder): string {
 }
 
 export default function AdminPreordersPage() {
-  const [search, setSearch]     = useState("");
-  const [status, setStatus]     = useState("");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<Preorder | null>(null);
 
   const { data: orders = [], isLoading, isError } = useAllPreorders();
@@ -137,9 +141,12 @@ export default function AdminPreordersPage() {
                       {statusLabel[order.status]}
                     </Badge>
                   </div>
-                  <p className="mt-1 text-sm font-medium">{displayName(order)}</p>
+                  <p className="mt-1 text-sm font-medium">
+                    {displayName(order)}
+                  </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {order.items.length} item · {formatRupiah(order.total_price)}
+                    {order.items.length} item ·{" "}
+                    {formatRupiah(order.total_price)}
                   </p>
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">
@@ -159,8 +166,18 @@ export default function AdminPreordersPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-border bg-muted">
                 <tr>
-                  {["Antrian", "ID", "Pelanggan", "Item", "Total", "Status", "Waktu"].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left font-medium">{h}</th>
+                  {[
+                    "Antrian",
+                    "ID",
+                    "Pelanggan",
+                    "Item",
+                    "Total",
+                    "Status",
+                    "Waktu",
+                  ].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left font-medium">
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -184,13 +201,17 @@ export default function AdminPreordersPage() {
                             {order.queue.queue_number}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">
+                            —
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                         #{order.id.slice(0, 8)}
                       </td>
-                      <td className="px-4 py-2.5 font-medium">{displayName(order)}</td>
+                      <td className="px-4 py-2.5 font-medium">
+                        {displayName(order)}
+                      </td>
                       <td className="px-4 py-2.5 text-muted-foreground">
                         {order.items.length} item
                       </td>
@@ -220,14 +241,20 @@ export default function AdminPreordersPage() {
         onClose={() => setSelected(null)}
         title={selected ? `#${selected.id.slice(0, 8)}` : ""}
         description={selected ? displayName(selected) : undefined}
-        footer={<Button variant="ghost" onClick={() => setSelected(null)}>Tutup</Button>}
+        footer={
+          <Button variant="ghost" onClick={() => setSelected(null)}>
+            Tutup
+          </Button>
+        }
       >
         {selected && (
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-2">
               {selected.queue?.queue_number != null && (
                 <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">Nomor Antrian</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Nomor Antrian
+                  </span>
                   <span className="text-lg font-bold text-primary-600">
                     #{selected.queue.queue_number}
                   </span>
@@ -246,17 +273,23 @@ export default function AdminPreordersPage() {
             {selected.status === "pending" && (
               <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
                 Untuk mengkonfirmasi, pergi ke{" "}
-                <a href="/admin/queues" className="font-medium text-primary underline underline-offset-2">
+                <a
+                  href="/admin/queues"
+                  className="font-medium text-primary underline underline-offset-2"
+                >
                   Manajemen Antrian
-                </a>
-                {" "}dan klik <strong>Selesai</strong> pada antrian yang sudah dipanggil.
+                </a>{" "}
+                dan klik <strong>Selesai</strong> pada antrian yang sudah
+                dipanggil.
               </div>
             )}
 
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Status</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Status
+              </span>
               {[
-                { key: "pending",   label: "Pesanan Diterima"    },
+                { key: "pending", label: "Pesanan Diterima" },
                 { key: "confirmed", label: "Pesanan Dikonfirmasi" },
               ].map((step) => {
                 const done =
@@ -265,16 +298,31 @@ export default function AdminPreordersPage() {
                 const cancelled =
                   selected.status === "cancelled" && step.key === "confirmed";
                 return (
-                  <div key={step.key} className="flex items-center gap-2 text-sm">
-                    <span className={cn(
-                      "flex size-5 items-center justify-center rounded-full",
-                      done      ? "bg-success text-success-foreground"     :
-                      cancelled ? "bg-destructive text-destructive-foreground" :
-                                  "border-2 border-muted-foreground/30 bg-card",
-                    )}>
-                      {done ? "✓" : cancelled ? <CloseIcon className="size-3" /> : ""}
+                  <div
+                    key={step.key}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <span
+                      className={cn(
+                        "flex size-5 items-center justify-center rounded-full",
+                        done
+                          ? "bg-success text-success-foreground"
+                          : cancelled
+                            ? "bg-destructive text-destructive-foreground"
+                            : "border-2 border-muted-foreground/30 bg-card",
+                      )}
+                    >
+                      {done ? (
+                        "✓"
+                      ) : cancelled ? (
+                        <CloseIcon className="size-3" />
+                      ) : (
+                        ""
+                      )}
                     </span>
-                    <span className={cancelled ? "text-destructive" : ""}>{step.label}</span>
+                    <span className={cancelled ? "text-destructive" : ""}>
+                      {step.label}
+                    </span>
                   </div>
                 );
               })}
@@ -289,12 +337,22 @@ export default function AdminPreordersPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Item</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Item
+              </span>
               {selected.items.map((item, idx) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: stable list
-                <div key={idx} className="flex items-center justify-between text-sm">
-                  <span>{item.quantity}x {item.menu?.name ?? `Item #${item.menu_item_id}`}</span>
-                  <span className="font-medium">{formatRupiah(item.subtotal)}</span>
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span>
+                    {item.quantity}x{" "}
+                    {item.menu?.name ?? `Item #${item.menu_item_id}`}
+                  </span>
+                  <span className="font-medium">
+                    {formatRupiah(item.subtotal)}
+                  </span>
                 </div>
               ))}
               <hr className="border-border" />

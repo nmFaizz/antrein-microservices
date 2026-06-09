@@ -28,9 +28,7 @@ export function getPreorderColumns(
       accessorKey: "id",
       header: "ID",
       cell: ({ row }) => (
-        <span className="font-mono text-xs uppercase">
-          #{row.original.id}
-        </span>
+        <span className="font-mono text-xs uppercase">#{row.original.id}</span>
       ),
     },
     {

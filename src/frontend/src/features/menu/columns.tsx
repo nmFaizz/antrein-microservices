@@ -30,7 +30,9 @@ export function getMenuColumns(
       accessorKey: "category",
       header: "Kategori",
       cell: ({ row }) => (
-        <Badge variant={row.original.category === "makanan" ? "info" : "default"}>
+        <Badge
+          variant={row.original.category === "makanan" ? "info" : "default"}
+        >
           {row.original.category}
         </Badge>
       ),

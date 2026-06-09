@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { getMe, login } from "@/features/auth/api";
-import { loginSchema, type LoginValues } from "@/features/auth/types";
+import { type LoginValues, loginSchema } from "@/features/auth/types";
 import { setRole, setToken } from "@/lib/auth";
 
 export default function LoginPage() {

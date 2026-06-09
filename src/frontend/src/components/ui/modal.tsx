@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
 import { CloseIcon } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
 interface ModalProps {
   open: boolean;
@@ -49,10 +47,7 @@ export function Modal({
       aria-modal="true"
       aria-label={title}
     >
-      <div
-        className="absolute inset-0 bg-foreground/40"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-foreground/40" onClick={onClose} />
       <div
         className={cn(
           "relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xl",

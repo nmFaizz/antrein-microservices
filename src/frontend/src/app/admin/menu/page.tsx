@@ -1,37 +1,37 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Form } from "@/components/ui/form";
 import { EditIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { SearchInput } from "@/components/ui/search-input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Form } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Muted } from "@/components/ui/typography";
-import { formatRupiah } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import {
-  MENU_CATEGORIES,
-  menuSchema,
-  type MenuItem,
-  type MenuValues,
-} from "@/features/menu/types";
-import {
-  useMenuItems,
   useCreateMenu,
+  useDeleteMenu,
+  useMenuItems,
   useUpdateMenu,
   useUpdateMenuAvailability,
-  useDeleteMenu,
 } from "@/features/menu/queries";
+import {
+  MENU_CATEGORIES,
+  type MenuItem,
+  type MenuValues,
+  menuSchema,
+} from "@/features/menu/types";
+import { formatRupiah } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const categoryOpts = MENU_CATEGORIES;
 const allCategories = [{ label: "Semua", value: "" }, ...categoryOpts];
@@ -63,7 +63,10 @@ export default function AdminMenuPage() {
     },
   });
 
-  const activeItems = useMemo(() => items.filter((i) => !i.is_deleted), [items]);
+  const activeItems = useMemo(
+    () => items.filter((i) => !i.is_deleted),
+    [items],
+  );
 
   const filtered = useMemo(() => {
     return activeItems.filter((item) => {

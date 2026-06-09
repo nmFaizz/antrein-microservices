@@ -131,3 +131,31 @@ export const queueStatusSchema = z.object({
     .regex(/^#([0-9a-fA-F]{6})$/, "Gunakan format hex, mis. #FACC15"),
 });
 export type QueueStatusValues = z.infer<typeof queueStatusSchema>;
+
+// --- API payloads (mirror backend Create/Update schemas) --------------------
+
+/** Body for `POST /queue-settings` (`created_by` = admin user id). */
+export interface QueueSettingsCreatePayload {
+  prefix: string;
+  grace_period_mins: number;
+  avg_serve_time_mins: number;
+  max_queue_per_day: number;
+  is_queue_open: boolean;
+  open_time: string | null;
+  close_time: string | null;
+  created_by: string;
+}
+
+/** Body for `PATCH /queue-settings/{id}` (all optional). */
+export type QueueSettingsUpdatePayload = Partial<
+  Omit<QueueSettingsCreatePayload, "created_by">
+>;
+
+/** Body for `POST /queue-statuses`. */
+export interface QueueStatusCreatePayload {
+  name: string;
+  color?: string | null;
+}
+
+/** Body for `PATCH /queue-statuses/{id}` (all optional). */
+export type QueueStatusUpdatePayload = Partial<QueueStatusCreatePayload>;

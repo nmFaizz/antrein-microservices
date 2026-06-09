@@ -3,9 +3,8 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { H1, Lead, Muted } from "@/components/ui/typography";
-
 import { MenuBookIcon } from "@/components/ui/icons";
+import { H1, Lead, Muted } from "@/components/ui/typography";
 
 export default function CustomerHome() {
   return (
@@ -16,7 +15,9 @@ export default function CustomerHome() {
       <div className="flex flex-col gap-2">
         <H1>Selamat Datang di AntreIn</H1>
         <Lead>Pesan makanan favoritmu tanpa antri panjang.</Lead>
-        <Muted>Pilih menu, pesan, dan dapatkan notifikasi saat pesananmu siap.</Muted>
+        <Muted>
+          Pilih menu, pesan, dan dapatkan notifikasi saat pesananmu siap.
+        </Muted>
       </div>
       <Link href="/menu">
         <Button size="lg">Lihat Menu</Button>

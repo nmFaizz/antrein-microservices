@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 
 import type { Queue } from "../types";
 
-export type QueueAction =
-  | "call"
-  | "serve"
-  | "skip"
-  | "requeue"
-  | "cancel";
+export type QueueAction = "call" | "serve" | "skip" | "requeue" | "cancel";
 
 /** Which actions are available for a given status (mirrors ALLOWED_TRANSITIONS). */
 export function actionsForStatus(status: string): QueueAction[] {
@@ -70,11 +65,17 @@ export function QueueRowActions({ queue, onAction }: QueueRowActionsProps) {
 /** Confirm-dialog copy + resulting status for each action. */
 export const actionMeta: Record<
   QueueAction,
-  { title: string; description: string; nextStatus: string; variant: "primary" | "destructive" }
+  {
+    title: string;
+    description: string;
+    nextStatus: string;
+    variant: "primary" | "destructive";
+  }
 > = {
   call: {
     title: "Panggil antrian ini?",
-    description: "Status akan berubah menjadi 'called' dan grace period dimulai.",
+    description:
+      "Status akan berubah menjadi 'called' dan grace period dimulai.",
     nextStatus: "called",
     variant: "primary",
   },

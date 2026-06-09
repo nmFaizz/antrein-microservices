@@ -22,8 +22,15 @@ export interface MenuItem {
 }
 
 export const menuSchema = z.object({
-  name: z.string().min(1, "Nama menu wajib diisi").max(100, "Maks 100 karakter"),
-  description: z.string().max(255, "Maks 255 karakter").optional().or(z.literal("")),
+  name: z
+    .string()
+    .min(1, "Nama menu wajib diisi")
+    .max(100, "Maks 100 karakter"),
+  description: z
+    .string()
+    .max(255, "Maks 255 karakter")
+    .optional()
+    .or(z.literal("")),
   price: z.number().positive("Harga harus lebih dari 0"),
   category: z.enum(["makanan", "minuman"]),
   is_available: z.boolean(),

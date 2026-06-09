@@ -6,11 +6,16 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CartIcon, CloseIcon, MinusIcon, PlusIcon } from "@/components/ui/icons";
 import { useCart } from "@/components/ui/cart-provider";
+import {
+  CartIcon,
+  CloseIcon,
+  MinusIcon,
+  PlusIcon,
+} from "@/components/ui/icons";
 import { H2, Muted } from "@/components/ui/typography";
-import { formatRupiah } from "@/lib/format";
 import { useCreatePreorder } from "@/features/preorder/queries";
+import { formatRupiah } from "@/lib/format";
 
 export default function CartPage() {
   const router = useRouter();
@@ -25,13 +30,18 @@ export default function CartPage() {
     try {
       await createPreorder.mutateAsync({
         notes: notes.trim() || null,
-        items: lines.map((l) => ({ menu_item_id: l.menu.id, quantity: l.quantity })),
+        items: lines.map((l) => ({
+          menu_item_id: l.menu.id,
+          quantity: l.quantity,
+        })),
       });
       clear();
       setNotes("");
       router.push("/preorder/history");
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Gagal membuat pesanan");
+      setSubmitError(
+        err instanceof Error ? err.message : "Gagal membuat pesanan",
+      );
     }
   }
 
@@ -48,7 +58,9 @@ export default function CartPage() {
               <Button className="w-full">Lihat Menu</Button>
             </Link>
             <Link href="/preorder/history">
-              <Button variant="outline" className="w-full">Lihat Riwayat Pesanan</Button>
+              <Button variant="outline" className="w-full">
+                Lihat Riwayat Pesanan
+              </Button>
             </Link>
           </div>
         </div>
@@ -68,7 +80,10 @@ export default function CartPage() {
         <CardContent>
           <div className="flex flex-col gap-3">
             {lines.map((line) => (
-              <div key={line.menu.id} className="flex items-center justify-between gap-2">
+              <div
+                key={line.menu.id}
+                className="flex items-center justify-between gap-2"
+              >
                 <div className="flex flex-1 flex-col">
                   <span className="text-sm font-medium">{line.menu.name}</span>
                   <span className="text-xs text-muted-foreground">
@@ -84,7 +99,9 @@ export default function CartPage() {
                   >
                     <MinusIcon className="size-3.5" />
                   </button>
-                  <span className="w-6 text-center text-sm font-medium">{line.quantity}</span>
+                  <span className="w-6 text-center text-sm font-medium">
+                    {line.quantity}
+                  </span>
                   <button
                     type="button"
                     onClick={() => setQuantity(line.menu.id, line.quantity + 1)}
@@ -117,7 +134,9 @@ export default function CartPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Catatan</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Catatan</CardTitle>
+        </CardHeader>
         <CardContent>
           <textarea
             value={notes}
@@ -129,9 +148,7 @@ export default function CartPage() {
         </CardContent>
       </Card>
 
-      {submitError && (
-        <p className="text-sm text-destructive">{submitError}</p>
-      )}
+      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 
       <Button
         size="lg"

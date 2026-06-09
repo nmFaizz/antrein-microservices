@@ -12,7 +12,13 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({ label, value, hint, icon, className }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+  className,
+}: StatCardProps) {
   return (
     <Card className={cn("p-5", className)}>
       <div className="flex items-start justify-between gap-3">

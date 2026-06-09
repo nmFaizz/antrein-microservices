@@ -6,7 +6,10 @@ import type { SVGProps } from "react";
  */
 type IconProps = SVGProps<SVGSVGElement>;
 
-function Base({ children, ...props }: IconProps & { children: React.ReactNode }) {
+function Base({
+  children,
+  ...props
+}: IconProps & { children: React.ReactNode }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
