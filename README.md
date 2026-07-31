@@ -9,15 +9,17 @@ Built as three independent Python microservices with a Next.js frontend, orchest
 ## 1. Tech Stack
 
 ### Backend (Python 3.11)
-| Service | Framework | Database | Auth |
-|---|---|---|---|
-| `user-service` | FastAPI 0.136.3 | PostgreSQL 16 | JWT + bcrypt |
-| `menu-preorder-service` | FastAPI 0.136.3 | PostgreSQL 16 | JWT |
-| `queue-service` | FastAPI 0.136.3 | PostgreSQL 16 | JWT |
+
+| Service                 | Framework       | Database      | Auth         |
+| ----------------------- | --------------- | ------------- | ------------ |
+| `user-service`          | FastAPI 0.136.3 | PostgreSQL 16 | JWT + bcrypt |
+| `menu-preorder-service` | FastAPI 0.136.3 | PostgreSQL 16 | JWT          |
+| `queue-service`         | FastAPI 0.136.3 | PostgreSQL 16 | JWT          |
 
 **Shared backend tooling:** SQLModel/SQLAlchemy, Alembic, Pydantic v2, OpenTelemetry, Prometheus metrics, Loki logging, pytest (with 90% coverage target on queue-service).
 
 ### Frontend
+
 - **Next.js 16** + React 19 + TypeScript 5
 - **Tailwind CSS 4** (styling)
 - **TanStack React Query 5** (server state)
@@ -27,6 +29,7 @@ Built as three independent Python microservices with a Next.js frontend, orchest
 - **Biome 2** (linter + formatter)
 
 ### Infrastructure
+
 - **Nginx** — API gateway routing to all 3 services
 - **Docker Compose** — full stack orchestration
 - **PostgreSQL 16** × 3 (one per service)
@@ -56,24 +59,7 @@ Admins can:
 
 ### Architecture
 
-```
-┌──────────┐     ┌─────────────────────────────────────┐
-│  Next.js  │────▶│           Nginx Gateway             │
-│ (Port 3000)│    │              (Port 8080)              │
-└──────────┘     └──┬────────────┬──────────────┬───────┘
-                    │            │              │
-                    ▼            ▼              ▼
-            ┌──────────┐ ┌──────────────┐ ┌────────────┐
-            │  User    │ │ Menu-Preorder│ │   Queue    │
-            │ Service  │ │   Service    │ │  Service   │
-            │ :8002    │ │   :8000      │ │  :8001     │
-            ├──────────┤ ├──────────────┤ ├────────────┤
-            │PostgreSQL│ │ PostgreSQL   │ │ PostgreSQL │
-            └──────────┘ └──────────────┘ └────────────┘
-                    ▲            │  ▲              │
-                    │            │  │ (HTTP/httpx) │
-                    └────────────┘  └──────────────┘
-```
+![Architecture](/public/assets/architecture.png)
 
 Each service follows a **repository → service → router** pattern with FastAPI dependency injection. Inter-service communication uses HTTP via `httpx`.
 
@@ -91,8 +77,8 @@ Each service follows a **repository → service → router** pattern with FastAP
 
 ```bash
 # 1. Clone and enter the project
-git clone <repo-url>
-cd antr ein-microservices
+git clone https://github.com/nmFaizz/antrein-microservices.git
+cd antrein-microservices
 
 # 2. Create environment file
 cp src/backend/user-service/.env.example src/backend/.env
@@ -139,21 +125,21 @@ pnpm dev
 
 ### Available Endpoints
 
-| URL | Service |
-|---|---|
+| URL                          | Service                     |
+| ---------------------------- | --------------------------- |
 | `http://localhost:8000/docs` | Menu-Preorder API (Swagger) |
-| `http://localhost:8001/docs` | Queue API (Swagger) |
-| `http://localhost:8002/docs` | User API (Swagger) |
-| `http://localhost:8080` | Nginx Gateway |
-| `http://localhost:3000` | Grafana |
-| `http://localhost:9090` | Prometheus |
-| `http://localhost:16686` | Jaeger UI |
+| `http://localhost:8001/docs` | Queue API (Swagger)         |
+| `http://localhost:8002/docs` | User API (Swagger)          |
+| `http://localhost:8080`      | Nginx Gateway               |
+| `http://localhost:3000`      | Grafana                     |
+| `http://localhost:9090`      | Prometheus                  |
+| `http://localhost:16686`     | Jaeger UI                   |
 
 ### Default Seed Accounts
 
-| Username | Password | Role |
-|---|---|---|
-| `user1` / `user2` / `user3` | `password123` | user |
+| Username                       | Password       | Role  |
+| ------------------------------ | -------------- | ----- |
+| `user1` / `user2` / `user3`    | `password123`  | user  |
 | `admin1` / `admin2` / `admin3` | `adminpass123` | admin |
 
 ### Running Tests

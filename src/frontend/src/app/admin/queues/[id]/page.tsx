@@ -95,7 +95,7 @@ export default function QueueDetailPage() {
               label="Posisi saat ini"
               value={
                 queue.status_name === "waiting"
-                  ? `#${queue.current_position}`
+                  ? `#${queue.current_position + 1}`
                   : "—"
               }
             />

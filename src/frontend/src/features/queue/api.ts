@@ -28,6 +28,10 @@ export function callNext(queue_date?: string) {
   });
 }
 
+export function callQueue(id: string) {
+  return api.post<Queue>(`/queues/${id}/call`, {});
+}
+
 export function serveQueue(id: string) {
   return api.post<Queue>(`/queues/${id}/serve`, {});
 }

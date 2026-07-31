@@ -98,7 +98,7 @@ def test_preorder_client_sync_success(monkeypatch):
     token = captured["headers"]["Authorization"].removeprefix("Bearer ")
     decoded = jwt.decode(token, SECRET, algorithms=["HS256"])
     assert decoded["role"] == "admin"
-    assert decoded["user_id"] == "svc-account"
+    assert decoded["sub"] == "svc-account"
 
 
 def test_preorder_client_omits_status_when_none(monkeypatch):

@@ -48,6 +48,8 @@ def list_queues(
     status_id: Optional[uuid.UUID] = Query(default=None),
     is_checked_in: Optional[bool] = Query(default=None),
 ):
+    # The queue is scoped per day (numbers reset daily), so default to today.
+    queue_date = queue_date or date.today()
     queues = service.list(
         queue_date=queue_date,
         status_id=status_id,
@@ -63,6 +65,14 @@ def call_next(payload: CallNextRequest, current_user: AdminDep, service: QueueSe
     admin_id = uuid.UUID(current_user["user_id"])
     queue = service.call_next(payload, admin_id)
     return ok(queue, "Next queue called")
+
+
+@router.post("/{queue_id}/call", response_model=APIResponse[QueueRead])
+def call(
+    queue_id: uuid.UUID, current_user: AdminDep, service: QueueServiceDep
+):
+    admin_id = uuid.UUID(current_user["user_id"])
+    return ok(service.call(queue_id, admin_id), "Queue called")
 
 
 @router.get("/{queue_id}", response_model=APIResponse[QueueRead])

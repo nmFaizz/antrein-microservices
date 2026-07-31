@@ -18,6 +18,7 @@ import {
 } from "@/features/queue/components/queue-row-actions";
 import {
   useCallNext,
+  useCallQueue,
   useCancelQueue,
   useQueues,
   useRequeueQueue,
@@ -44,6 +45,7 @@ export default function QueuesPage() {
 
   const { data: queues = [], isLoading, isError } = useQueues();
   const callNext = useCallNext();
+  const callQueue = useCallQueue();
   const serveQueue = useServeQueue();
   const skipQueue = useSkipQueue();
   const requeueQueue = useRequeueQueue();
@@ -51,6 +53,7 @@ export default function QueuesPage() {
 
   const isActing =
     callNext.isPending ||
+    callQueue.isPending ||
     serveQueue.isPending ||
     skipQueue.isPending ||
     requeueQueue.isPending ||
@@ -75,7 +78,7 @@ export default function QueuesPage() {
     setPending(null);
     switch (action) {
       case "call":
-        // individual call — not used via row, only via call-next button
+        await callQueue.mutateAsync(queue.id);
         break;
       case "serve":
         await serveQueue.mutateAsync(queue.id);

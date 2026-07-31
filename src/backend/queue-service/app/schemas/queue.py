@@ -77,3 +77,6 @@ class QueueRead(SQLModel):
 
     # Enriched from preorder-service; None if unavailable or preorder_id is null.
     preorder: Optional[Any] = None
+
+    # Flattened from the preorder snapshot for display (denormalized, read-only).
+    customer_name: Optional[str] = None

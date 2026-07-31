@@ -12,6 +12,10 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
 
+    # Business operating-hours timezone. open_time/close_time are configured in
+    # this timezone; stored times and "now" are compared after conversion.
+    BUSINESS_TIMEZONE: str = "Asia/Jakarta"
+
     # Service identity (used by tracing/logging/observability).
     PROJECT_NAME: str = "Queue Service"
     SERVICE_VERSION: str = "1.0.0"

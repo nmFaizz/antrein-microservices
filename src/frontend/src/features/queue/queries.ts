@@ -4,6 +4,7 @@ import { preorderKeys } from "@/features/preorder/queries";
 
 import {
   callNext,
+  callQueue,
   cancelQueue,
   checkInQueue,
   getQueue,
@@ -77,6 +78,18 @@ export function useCallNext() {
     // Call next for today; `mutate()` takes no argument.
     mutationFn: () => callNext(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queueKeys.all }),
+  });
+}
+
+export function useCallQueue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => callQueue(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queueKeys.all });
+      // call updates the linked preorder's queue snapshot on the backend
+      queryClient.invalidateQueries({ queryKey: preorderKeys.all });
+    },
   });
 }
 

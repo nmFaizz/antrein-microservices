@@ -6,6 +6,8 @@ from typing import Optional
 import httpx
 import jwt
 
+from app.core.remote import extract_message
+
 logger = logging.getLogger(__name__)
 
 
@@ -64,7 +66,7 @@ class PreorderServiceClient:
                     "Preorder sync for %s returned %s: %s",
                     preorder_id,
                     response.status_code,
-                    response.text,
+                    extract_message(response, response.text),
                 )
         except httpx.RequestError as exc:
             logger.warning(

@@ -15,7 +15,7 @@ def _mint_token(user_id: str, role: str, expired: bool = False) -> str:
     now = datetime.now(timezone.utc)
     exp = now - timedelta(hours=1) if expired else now + timedelta(hours=1)
     payload = {
-        "user_id": user_id,
+        "sub": user_id,
         "role": role,
         "iat": now,
         "exp": exp,
@@ -66,7 +66,7 @@ def test_bearer_auth_expired_token_401(unauthenticated_client):
 
 
 def test_bearer_auth_missing_user_id_401(unauthenticated_client):
-    """Token without user_id should return 401."""
+    """Token without sub (user id) should return 401."""
     payload = {"role": "admin", "iat": datetime.now(timezone.utc), "exp": datetime.now(timezone.utc) + timedelta(hours=1)}
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
     # POST /queue-statuses requires admin auth
@@ -92,7 +92,7 @@ def test_admin_required_customer_role_403(customer_client):
 def test_admin_required_missing_role_401(unauthenticated_client):
     """Token with missing role should be treated as non-admin."""
     payload = {
-        "user_id": str(uuid.uuid4()),
+        "sub": str(uuid.uuid4()),
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(hours=1),
     }

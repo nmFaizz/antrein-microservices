@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, time
+from datetime import date, datetime, time
 
 import pytest
 
@@ -86,6 +86,33 @@ def test_create_no_hours_configured_ok(queue_service, session):
     session.commit()
     result = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
     assert result.status_name == "waiting"
+
+
+def test_create_within_hours_uses_business_timezone(
+    monkeypatch, queue_service, session
+):
+    # Fixed UTC now = 03:00 UTC = 10:00 WIB (default BUSINESS_TIMEZONE).
+    # 10:00 WIB is inside an 08:00-21:00 window, so it must pass.
+    monkeypatch.setattr(
+        "app.services.queue_service._now", lambda: datetime(2026, 7, 31, 3, 0, 0)
+    )
+    session.add(make_settings(open_time=time(8, 0), close_time=time(21, 0)))
+    session.commit()
+    result = queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
+    assert result.status_name == "waiting"
+
+
+def test_create_outside_hours_uses_business_timezone(
+    monkeypatch, queue_service, session
+):
+    # Same fixed UTC now (10:00 WIB), but the window opens at 11:00 WIB.
+    monkeypatch.setattr(
+        "app.services.queue_service._now", lambda: datetime(2026, 7, 31, 3, 0, 0)
+    )
+    session.add(make_settings(open_time=time(11, 0), close_time=time(21, 0)))
+    session.commit()
+    with pytest.raises(OutsideOperatingHours):
+        queue_service.create_queue(QueueCreate(customer_id=uuid.uuid4()))
 
 
 def test_create_quota_exceeded(queue_service, session):

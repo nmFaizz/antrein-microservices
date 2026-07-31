@@ -1,10 +1,12 @@
 import uuid
-from datetime import date, timedelta
+from datetime import date, timedelta, timezone
 from statistics import mean
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from sqlmodel import Session
 
+from app.lib.config import settings
 from app.lib.constants import (
     ALLOWED_TRANSITIONS,
     NOTIFY_ALMOST_POSITION,
@@ -134,6 +136,29 @@ class QueueService:
             queue, NotificationType.CALLED
         )
         self._emit_position_notifications(queue_date)
+        self.session.commit()
+        read = self._to_read(queue)
+        self._sync_preorder(queue, read)
+        return read
+
+    def call(self, queue_id: uuid.UUID, admin_id: uuid.UUID) -> QueueRead:
+        """Call a specific waiting queue (admin row action)."""
+        queue = self._get_or_404(queue_id)
+        current = self.resolver.name_for(queue.status_id)
+        self._transition(queue, DefaultStatus.CALLED)
+        queue.called_at = _now()
+        queue.called_by = admin_id
+        self._log(
+            queue,
+            current,
+            DefaultStatus.CALLED,
+            admin_id,
+            TriggerType.ADMIN,
+        )
+        self.notification_service.create_and_dispatch(
+            queue, NotificationType.CALLED
+        )
+        self._emit_position_notifications(queue.queue_date)
         self.session.commit()
         read = self._to_read(queue)
         self._sync_preorder(queue, read)
@@ -284,11 +309,16 @@ class QueueService:
         return settings
 
     @staticmethod
-    def _assert_within_hours(settings: QueueSettings) -> None:
-        if settings.open_time is None or settings.close_time is None:
+    def _assert_within_hours(settings_row: QueueSettings) -> None:
+        if settings_row.open_time is None or settings_row.close_time is None:
             return
-        now_t = _now().time()
-        if not (settings.open_time <= now_t <= settings.close_time):
+        now_t = (
+            _now()
+            .replace(tzinfo=timezone.utc)
+            .astimezone(ZoneInfo(settings.BUSINESS_TIMEZONE))
+            .time()
+        )
+        if not (settings_row.open_time <= now_t <= settings_row.close_time):
             raise OutsideOperatingHours()
 
     def _transition(self, queue: Queue, target: str) -> None:
@@ -381,5 +411,8 @@ class QueueService:
         )
         # Enrich with preorder data (best-effort).
         if queue.preorder_id is not None:
-            read.preorder = self.preorder_client.get_preorder(queue.preorder_id)
+            preorder = self.preorder_client.get_preorder(queue.preorder_id)
+            read.preorder = preorder
+            if preorder and preorder.get("customer_name"):
+                read.customer_name = preorder["customer_name"]
         return read

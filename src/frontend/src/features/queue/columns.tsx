@@ -59,9 +59,8 @@ export function getQueueColumns(
       accessorKey: "current_position",
       header: "Posisi",
       cell: ({ row }) =>
-        row.original.status_name === "waiting" ||
-        row.original.status_name === "re_queued"
-          ? row.original.current_position
+        row.original.status_name === "waiting"
+          ? row.original.current_position + 1
           : "—",
     },
     {

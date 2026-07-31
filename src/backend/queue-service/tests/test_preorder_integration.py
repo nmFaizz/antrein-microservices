@@ -25,8 +25,9 @@ from app.services.status_resolver import StatusResolver
 class RecordingPreorderClient:
     """Test double capturing every sync(...) call."""
 
-    def __init__(self):
+    def __init__(self, preorder_data=None):
         self.calls = []
+        self._preorder_data = preorder_data
 
     def sync(self, preorder_id, queue_snapshot, status=None):
         self.calls.append(
@@ -38,7 +39,7 @@ class RecordingPreorderClient:
         )
 
     def get_preorder(self, preorder_id):
-        return None  # Not mocked in tests
+        return self._preorder_data
 
 
 @pytest.fixture(name="recorder")
@@ -46,8 +47,7 @@ def recorder_fixture():
     return RecordingPreorderClient()
 
 
-@pytest.fixture(name="svc")
-def svc_fixture(session, seed_statuses, recorder):
+def _make_svc(session, seed_statuses, preorder_client):
     notification_repo = QueueNotificationRepository(session)
     return QueueService(
         session=session,
@@ -59,8 +59,13 @@ def svc_fixture(session, seed_statuses, recorder):
         notification_service=NotificationService(
             notification_repo, UserServiceClient(), NotificationDispatcher()
         ),
-        preorder_client=recorder,
+        preorder_client=preorder_client,
     )
+
+
+@pytest.fixture(name="svc")
+def svc_fixture(session, seed_statuses, recorder):
+    return _make_svc(session, seed_statuses, recorder)
 
 
 def _create_with_preorder(svc):
@@ -127,3 +132,28 @@ def test_no_preorder_id_skips_sync(svc, settings_row, recorder):
     svc.create_queue(QueueCreate(customer_id=uuid.uuid4()))
     svc.call_next(CallNextRequest(), uuid.uuid4())
     assert recorder.calls == []
+
+
+def test_list_surfaces_customer_name_from_preorder(
+    session, seed_statuses, settings_row
+):
+    client = RecordingPreorderClient(
+        preorder_data={"id": str(uuid.uuid4()), "customer_name": "budi"}
+    )
+    svc = _make_svc(session, seed_statuses, client)
+    svc.create_queue(QueueCreate(customer_id=uuid.uuid4(), preorder_id=uuid.uuid4()))
+    result = svc.list(
+        queue_date=None, status_id=None, is_checked_in=None, offset=0, limit=50
+    )
+    assert result[0].customer_name == "budi"
+
+
+def test_list_omits_customer_name_when_preorder_unavailable(
+    session, seed_statuses, settings_row
+):
+    svc = _make_svc(session, seed_statuses, RecordingPreorderClient())
+    svc.create_queue(QueueCreate(customer_id=uuid.uuid4(), preorder_id=uuid.uuid4()))
+    result = svc.list(
+        queue_date=None, status_id=None, is_checked_in=None, offset=0, limit=50
+    )
+    assert result[0].customer_name is None

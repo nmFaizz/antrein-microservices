@@ -72,6 +72,49 @@ def test_list_queues_and_filters(ready_client):
     assert len(limited.json()["data"]) == 1
 
 
+def test_list_defaults_to_today(ready_client):
+    # A queue from a previous day must not appear in the default (today) list.
+    ready_client.post(
+        "/queues",
+        json={"customer_id": str(uuid.uuid4()), "queue_date": "2026-06-08"},
+    )
+    ready_client.post("/queues", json={"customer_id": str(uuid.uuid4())})
+    resp = ready_client.get("/queues")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert len(data) == 1
+    assert all(q["queue_date"] != "2026-06-08" for q in data)
+
+
+def test_call_specific_queue(ready_client):
+    admin = str(uuid.uuid4())
+    created = ready_client.post(
+        "/queues", json={"customer_id": str(uuid.uuid4())}
+    ).json()
+    qid = created["data"]["id"]
+    resp = ready_client.post(f"/queues/{qid}/call", json={"admin_id": admin})
+    assert resp.status_code == 200
+    assert resp.json()["data"]["status_name"] == "called"
+    assert resp.json()["data"]["called_by"] is not None
+
+    again = ready_client.post(f"/queues/{qid}/call", json={"admin_id": admin})
+    assert again.status_code == 409
+    assert again.json()["success"] is False
+
+
+def test_call_served_queue_409(ready_client):
+    admin = str(uuid.uuid4())
+    created = ready_client.post(
+        "/queues", json={"customer_id": str(uuid.uuid4())}
+    ).json()
+    qid = created["data"]["id"]
+    ready_client.post("/queues/call-next", json={"admin_id": admin})
+    ready_client.post(f"/queues/{qid}/serve", json={"admin_id": admin})
+    resp = ready_client.post(f"/queues/{qid}/call", json={"admin_id": admin})
+    assert resp.status_code == 409
+    assert resp.json()["success"] is False
+
+
 def test_get_missing_queue_404_envelope(ready_client):
     resp = ready_client.get(f"/queues/{uuid.uuid4()}")
     assert resp.status_code == 404

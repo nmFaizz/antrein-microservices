@@ -125,7 +125,7 @@ export default function DashboardPage() {
                           {q.customer_name}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          Posisi {q.current_position} · ~
+                          Posisi {q.current_position + 1} · ~
                           {q.estimated_wait_minutes} mnt
                         </span>
                       </div>

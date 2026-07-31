@@ -28,7 +28,9 @@ class QueueRepository(BaseRepository[Queue]):
         if is_checked_in is not None:
             statement = statement.where(Queue.is_checked_in == is_checked_in)
         statement = (
-            statement.order_by(Queue.queue_number).offset(offset).limit(limit)
+            statement.order_by(Queue.queue_number, Queue.created_at)
+            .offset(offset)
+            .limit(limit)
         )
         return list(self.session.exec(statement).all())
 
